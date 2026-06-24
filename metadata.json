@@ -1,0 +1,6 @@
+{
+  "name": "El Arquitecto",
+  "description": "Plano maestro interactivo para estructurar tus cimientos económicos, escanear pasivos y proyectar tu libertad financiera.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
