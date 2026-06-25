@@ -21,6 +21,9 @@ export interface AppState {
   fixedCosts: FixedCost[];
   debts: Debt[];
   acceleratorStrength: number; // 0 to 100 percentage
+  debtPct: number; // 0 to 100 percentage
+  savingsPct: number; // 0 to 100 percentage
+  personalPct: number; // 0 to 100 percentage
   strategy: StrategyType;
   savingsAllocation: number; // 0 to 100 percentage (rest goes to debt payoff)
   activeTab: 'base' | 'escaner' | 'valvula' | 'proyeccion';

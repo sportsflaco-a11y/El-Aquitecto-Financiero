@@ -36,7 +36,7 @@ export default function WelcomeScreen({
 
   return (
     <div className={`min-h-[calc(100vh-4rem)] flex flex-col justify-between py-12 px-6 text-center ${
-      isDarkMode ? 'bg-[#0f1511] text-[#dee4de]' : 'bg-[#f5fbf5] text-[#171d19]'
+      isDarkMode ? 'bg-black text-[#dee4de]' : 'bg-[#f5fbf5] text-[#171d19]'
     }`}>
       {/* Empty spacer to push content down to center */}
       <div />
@@ -52,7 +52,7 @@ export default function WelcomeScreen({
         <h1 className={`font-display text-4xl md:text-6xl font-bold tracking-tight uppercase ${
           isDarkMode ? 'text-[#68dba9]' : 'text-[#006948]'
         }`} id="welcome-title">
-          EL ARQUITECTO
+          EL ARQUITECTO FINANCIERO
         </h1>
 
         <div className="flex flex-col gap-4 mt-6">

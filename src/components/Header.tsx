@@ -41,7 +41,7 @@ export default function Header({
           }`}
           id="header-brand-title"
         >
-          EL ARQUITECTO
+          EL ARQUITECTO FINANCIERO
         </span>
       </div>
 

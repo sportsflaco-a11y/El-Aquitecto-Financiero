@@ -93,7 +93,59 @@ export default function ScannerTab({
         </p>
       </div>
 
-      {/* Metrics Banner - Refactored to utilize KPICard */}
+      {/* Debts Table/Form Card - Now placed first */}
+      <div className={`rounded-2xl p-6 border ambient-shadow ${
+        isDarkMode ? 'bg-[#0a0f0c] border-[#3d4a42]/30' : 'bg-white border-gray-100'
+      }`} id="debts-list-card">
+        <div className={`flex items-center gap-3 border-b pb-4 mb-6 ${
+          isDarkMode ? 'border-[#3d4a42]/20' : 'border-gray-100'
+        }`}>
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+            isDarkMode ? 'bg-[#1b211d] text-[#68dba9]' : 'bg-[#d5e3fc] text-[#57657a]'
+          }`}>
+            <Landmark className="w-5 h-5 fill-current" />
+          </div>
+          <h3 className="text-base md:text-lg font-bold">Listado de Pasivos</h3>
+        </div>
+
+        {/* Inputs list - Refactored to utilize DebtRow */}
+        <div className="flex flex-col gap-6" id="debts-form-list">
+          <AnimatePresence initial={false}>
+            {debts.map((debt, index) => (
+              <DebtRow
+                key={debt.id}
+                debt={debt}
+                index={index}
+                currency={currency}
+                isDarkMode={isDarkMode}
+                onUpdate={updateDebt}
+                onRemove={removeDebt}
+              />
+            ))}
+          </AnimatePresence>
+
+          {debts.length === 0 && (
+            <div className="text-center py-8 text-gray-400 dark:text-[#87948b]">
+              Excelente, no registras deudas activas. Agrégalas si quieres proyectar un acelerador.
+            </div>
+          )}
+        </div>
+
+        <button
+          onClick={addDebt}
+          className={`mt-4 py-2.5 px-4 rounded-lg border border-dashed font-display text-xs md:text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer ${
+            isDarkMode 
+              ? 'border-[#3d4a42] text-[#68dba9] hover:bg-[#3d4a42]/20' 
+              : 'border-[#bccac0] text-[#006948] hover:bg-[#dee4de]/30'
+          }`}
+          id="add-debt-btn"
+        >
+          <Plus className="w-4 h-4" />
+          Añadir otra deuda o pasivo
+        </button>
+      </div>
+
+      {/* Metrics Banner - Placed after Listado de Pasivos */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="scanner-metrics-grid">
         <KPICard
           label="Deuda Total"
@@ -147,58 +199,6 @@ export default function ScannerTab({
         </motion.div>
       )}
 
-      {/* Debts Table/Form Card */}
-      <div className={`rounded-2xl p-6 border ambient-shadow ${
-        isDarkMode ? 'bg-[#0a0f0c] border-[#3d4a42]/30' : 'bg-white border-gray-100'
-      }`} id="debts-list-card">
-        <div className={`flex items-center gap-3 border-b pb-4 mb-6 ${
-          isDarkMode ? 'border-[#3d4a42]/20' : 'border-gray-100'
-        }`}>
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-            isDarkMode ? 'bg-[#1b211d] text-[#68dba9]' : 'bg-[#d5e3fc] text-[#57657a]'
-          }`}>
-            <Landmark className="w-5 h-5 fill-current" />
-          </div>
-          <h3 className="text-base md:text-lg font-bold">Listado de Pasivos</h3>
-        </div>
-
-        {/* Inputs list - Refactored to utilize DebtRow */}
-        <div className="flex flex-col gap-6" id="debts-form-list">
-          <AnimatePresence initial={false}>
-            {debts.map((debt, index) => (
-              <DebtRow
-                key={debt.id}
-                debt={debt}
-                index={index}
-                currency={currency}
-                isDarkMode={isDarkMode}
-                onUpdate={updateDebt}
-                onRemove={removeDebt}
-              />
-            ))}
-          </AnimatePresence>
-
-          {debts.length === 0 && (
-            <div className="text-center py-8 text-gray-400 dark:text-[#87948b]">
-              Excelente, no registras deudas activas. Agrégalas si quieres proyectar un acelerador.
-            </div>
-          )}
-        </div>
-
-        <button
-          onClick={addDebt}
-          className={`mt-4 py-2.5 px-4 rounded-lg border border-dashed font-display text-xs md:text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer ${
-            isDarkMode 
-              ? 'border-[#3d4a42] text-[#68dba9] hover:bg-[#3d4a42]/20' 
-              : 'border-[#bccac0] text-[#006948] hover:bg-[#dee4de]/30'
-          }`}
-          id="add-debt-btn"
-        >
-          <Plus className="w-4 h-4" />
-          Añadir otra deuda o pasivo
-        </button>
-      </div>
-
       {/* Next CTA Panel */}
       <div className="flex justify-end mt-4" id="scanner-nav-container">
         <button
@@ -210,7 +210,7 @@ export default function ScannerTab({
           }`}
           id="scanner-next-btn"
         >
-          Configurar Acelerador
+          Configurar Válvula de Aceleración
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>

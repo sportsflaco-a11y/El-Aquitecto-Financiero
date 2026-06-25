@@ -1,6 +1,7 @@
 import { Debt } from '../types';
 import { Trash2 } from 'lucide-react';
 import { motion } from 'motion/react';
+import FormattedInput from './FormattedInput';
 
 interface DebtRowProps {
   key?: string;
@@ -77,16 +78,15 @@ export default function DebtRow({
             }`}>
               {currency}
             </span>
-            <input
-              type="number"
+            <FormattedInput
               placeholder="0.00"
               className={`w-full pl-8 pr-3 py-2 rounded-lg border font-sans text-xs md:text-sm focus:outline-none focus:ring-2 transition-all ${
                 isDarkMode 
                   ? 'bg-[#0f1511] border-[#3d4a42]/40 text-[#dee4de] focus:ring-[#68dba9]' 
                   : 'bg-[#f5fbf5] border-[#bccac0]/40 text-[#171d19] focus:ring-[#006948]'
               }`}
-              value={debt.balance || ''}
-              onChange={(e) => onUpdate(debt.id, 'balance', Math.max(0, Number(e.target.value)))}
+              value={debt.balance}
+              onChange={(val) => onUpdate(debt.id, 'balance', val)}
             />
           </div>
         </div>
@@ -126,16 +126,15 @@ export default function DebtRow({
             }`}>
               {currency}
             </span>
-            <input
-              type="number"
+            <FormattedInput
               placeholder="0.00"
               className={`w-full pl-8 pr-3 py-2 rounded-lg border font-sans text-xs md:text-sm focus:outline-none focus:ring-2 transition-all ${
                 isDarkMode 
                   ? 'bg-[#0f1511] border-[#3d4a42]/40 text-[#dee4de] focus:ring-[#68dba9]' 
                   : 'bg-[#f5fbf5] border-[#bccac0]/40 text-[#171d19] focus:ring-[#006948]'
               }`}
-              value={debt.minPayment || ''}
-              onChange={(e) => onUpdate(debt.id, 'minPayment', Math.max(0, Number(e.target.value)))}
+              value={debt.minPayment}
+              onChange={(val) => onUpdate(debt.id, 'minPayment', val)}
             />
           </div>
         </div>

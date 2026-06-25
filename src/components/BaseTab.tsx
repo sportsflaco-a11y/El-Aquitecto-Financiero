@@ -1,6 +1,8 @@
 import { FixedCost } from '../types';
-import { Plus, Trash2, HelpCircle, Banknote, Home, ArrowRight, AlertTriangle } from 'lucide-react';
+import { Plus, HelpCircle, Banknote, Home, ArrowRight, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import FormattedInput from './FormattedInput';
+import FixedCostRow from './FixedCostRow';
 
 interface BaseTabProps {
   isDarkMode: boolean;
@@ -104,17 +106,16 @@ export default function BaseTab({
                 }`}>
                   {currency}
                 </span>
-                <input
+                <FormattedInput
                   id="monthly-income-input"
-                  type="number"
                   placeholder="0.00"
                   className={`w-full pl-10 pr-4 py-3 rounded-xl border font-sans text-base md:text-lg focus:outline-none focus:ring-2 transition-all ${
                     isDarkMode 
                       ? 'bg-[#0f1511] border-[#3d4a42]/40 text-[#dee4de] focus:ring-[#68dba9]' 
                       : 'bg-[#f5fbf5] border-[#bccac0]/40 text-[#171d19] focus:ring-[#006948]'
                   }`}
-                  value={income || ''}
-                  onChange={(e) => setIncome(Math.max(0, Number(e.target.value)))}
+                  value={income}
+                  onChange={setIncome}
                 />
               </div>
               <p className={`text-xs mt-1 flex items-center gap-1 ${
@@ -139,58 +140,20 @@ export default function BaseTab({
             <div className="w-10 h-10 rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 flex items-center justify-center">
               <Home className="w-5 h-5 fill-current" />
             </div>
-            <h3 className="text-base md:text-lg font-bold">Costos Innegociables</h3>
+            <h3 className="text-base md:text-lg font-bold">Gastos Innegociables (Sin Deudas)</h3>
           </div>
 
           <div className="flex flex-col gap-4 max-h-[28rem] overflow-y-auto pr-1" id="costs-grid-container">
             <AnimatePresence initial={false}>
               {fixedCosts.map((cost) => (
-                <motion.div
+                <FixedCostRow
                   key={cost.id}
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex flex-col gap-2 relative border-b border-gray-100 dark:border-[#3d4a42]/10 pb-4 last:border-0 last:pb-0"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <input
-                      type="text"
-                      placeholder="Nombre del Costo (e.g. Alquiler)"
-                      className={`bg-transparent font-sans text-xs md:text-sm font-semibold focus:outline-none placeholder-gray-400 dark:placeholder-gray-500 w-full py-1 ${
-                        isDarkMode ? 'text-[#dee4de] focus:text-[#68dba9]' : 'text-[#171d19] focus:text-[#006948]'
-                      }`}
-                      value={cost.name}
-                      onChange={(e) => updateCostRow(cost.id, 'name', e.target.value)}
-                    />
-                    <button
-                      onClick={() => removeCostRow(cost.id)}
-                      className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-full transition-colors"
-                      aria-label="Eliminar costo"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  
-                  <div className="relative">
-                    <span className={`absolute left-4 top-1/2 -translate-y-1/2 font-sans text-sm ${
-                      isDarkMode ? 'text-[#bccac0]' : 'text-gray-400'
-                    }`}>
-                      {currency}
-                    </span>
-                    <input
-                      type="number"
-                      placeholder="0.00"
-                      className={`w-full pl-10 pr-4 py-2.5 rounded-xl border font-sans text-sm md:text-base focus:outline-none focus:ring-2 transition-all ${
-                        isDarkMode 
-                          ? 'bg-[#0f1511] border-[#3d4a42]/40 text-[#dee4de] focus:ring-[#68dba9]' 
-                          : 'bg-[#f5fbf5] border-[#bccac0]/40 text-[#171d19] focus:ring-[#006948]'
-                      }`}
-                      value={cost.value || ''}
-                      onChange={(e) => updateCostRow(cost.id, 'value', Math.max(0, Number(e.target.value)))}
-                    />
-                  </div>
-                </motion.div>
+                  cost={cost}
+                  isDarkMode={isDarkMode}
+                  currency={currency}
+                  onUpdate={updateCostRow}
+                  onRemove={removeCostRow}
+                />
               ))}
             </AnimatePresence>
 
@@ -255,7 +218,7 @@ export default function BaseTab({
         
         <div className="flex flex-col gap-1 text-center md:text-left z-10 w-full md:w-auto" id="surplus-text-container">
           <span className="text-xs uppercase tracking-wider font-semibold opacity-90">
-            Dinero Sobrante Actual
+            Dinero Sobrante Mensual
           </span>
           <div className="text-2xl md:text-4xl font-display font-bold flex items-baseline justify-center md:justify-start gap-1">
             <span>{currency}</span>
@@ -272,7 +235,7 @@ export default function BaseTab({
           }`}
           id="analyze-debts-cta"
         >
-          Analizar Deudas
+          Analizar deudas con Escáner
           <ArrowRight className="w-4 h-4" />
         </button>
       </motion.div>

@@ -5,9 +5,11 @@ import BaseTab from './components/BaseTab';
 import ScannerTab from './components/ScannerTab';
 import ValveTab from './components/ValveTab';
 import ProjectionTab from './components/ProjectionTab';
+import FinancialTips from './components/FinancialTips';
 import { AppState, FixedCost, Debt, StrategyType } from './types';
 import { Database, ShieldAlert, Sliders, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useLocalStorageState } from './hooks/useLocalStorageState';
 
 const LOCAL_STORAGE_KEY = 'el_arquitecto_state_v1';
 
@@ -22,20 +24,23 @@ const initialDebts: Debt[] = [
 ];
 
 export default function App() {
-  // Initialize state from local storage or defaults
-  const [hasStarted, setHasStarted] = useState<boolean>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_started`);
-    return saved ? JSON.parse(saved) : false;
-  });
+  // Initialize state using custom hook useLocalStorageState for clean auto-sync
+  const [hasStarted, setHasStarted] = useLocalStorageState<boolean>(
+    `${LOCAL_STORAGE_KEY}_started`,
+    false
+  );
 
-  const [currency, setCurrency] = useState<string>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_currency`);
-    if (!saved) return 'USD';
-    if (saved === '$') return 'USD';
-    if (saved === '€') return 'EUR';
-    if (saved === 'S/.') return 'PEN';
-    return saved;
-  });
+  const [currency, setCurrency] = useLocalStorageState<string>(
+    `${LOCAL_STORAGE_KEY}_currency`,
+    'USD'
+  );
+
+  // Normalize legacy currency values
+  useEffect(() => {
+    if (currency === '$') setCurrency('USD');
+    else if (currency === '€') setCurrency('EUR');
+    else if (currency === 'S/.') setCurrency('PEN');
+  }, [currency, setCurrency]);
 
   const getCurrencySymbol = (code: string) => {
     const symbols: Record<string, string> = {
@@ -52,89 +57,56 @@ export default function App() {
 
   const currencySymbol = getCurrencySymbol(currency);
 
-  const [income, setIncome] = useState<number>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_income`);
-    return saved ? Number(saved) : 5000;
-  });
+  const [income, setIncome] = useLocalStorageState<number>(
+    `${LOCAL_STORAGE_KEY}_income`,
+    5000
+  );
 
-  const [fixedCosts, setFixedCosts] = useState<FixedCost[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_fixed_costs`);
-    return saved ? JSON.parse(saved) : initialFixedCosts;
-  });
+  const [fixedCosts, setFixedCosts] = useLocalStorageState<FixedCost[]>(
+    `${LOCAL_STORAGE_KEY}_fixed_costs`,
+    initialFixedCosts
+  );
 
-  const [debts, setDebts] = useState<Debt[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_debts`);
-    return saved ? JSON.parse(saved) : initialDebts;
-  });
+  const [debts, setDebts] = useLocalStorageState<Debt[]>(
+    `${LOCAL_STORAGE_KEY}_debts`,
+    initialDebts
+  );
 
-  const [acceleratorStrength, setAcceleratorStrength] = useState<number>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_acc_strength`);
-    return saved ? Number(saved) : 50;
-  });
+  const [debtPct, setDebtPct] = useLocalStorageState<number>(
+    `${LOCAL_STORAGE_KEY}_debt_pct`,
+    40
+  );
 
-  const [strategy, setStrategy] = useState<StrategyType>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_strategy`);
-    return (saved as StrategyType) || 'avalanche';
-  });
+  const [savingsPct, setSavingsPct] = useLocalStorageState<number>(
+    `${LOCAL_STORAGE_KEY}_savings_pct`,
+    30
+  );
 
-  const [savingsAllocation, setSavingsAllocation] = useState<number>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_savings_alloc`);
-    return saved ? Number(saved) : 30;
-  });
+  const [personalPct, setPersonalPct] = useLocalStorageState<number>(
+    `${LOCAL_STORAGE_KEY}_personal_pct`,
+    30
+  );
 
-  const [activeTab, setActiveTab] = useState<'base' | 'escaner' | 'valvula' | 'proyeccion'>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_active_tab`);
-    return (saved as any) || 'base';
-  });
+  const [strategy, setStrategy] = useLocalStorageState<StrategyType>(
+    `${LOCAL_STORAGE_KEY}_strategy`,
+    'avalanche'
+  );
 
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_dark_mode`);
-    return saved ? JSON.parse(saved) : false;
-  });
+  const [activeTab, setActiveTab] = useLocalStorageState<'base' | 'escaner' | 'valvula' | 'proyeccion'>(
+    `${LOCAL_STORAGE_KEY}_active_tab`,
+    'base'
+  );
 
-  // Persist State to Local Storage on changes
+  const [isDarkMode, setIsDarkMode] = useLocalStorageState<boolean>(
+    `${LOCAL_STORAGE_KEY}_dark_mode`,
+    false
+  );
+
+  // Apply theme classes to HTML document element for smooth Tailwind styling
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_started`, JSON.stringify(hasStarted));
-  }, [hasStarted]);
-
-  useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_currency`, currency);
-  }, [currency]);
-
-  useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_income`, String(income));
-  }, [income]);
-
-  useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_fixed_costs`, JSON.stringify(fixedCosts));
-  }, [fixedCosts]);
-
-  useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_debts`, JSON.stringify(debts));
-  }, [debts]);
-
-  useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_acc_strength`, String(acceleratorStrength));
-  }, [acceleratorStrength]);
-
-  useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_strategy`, strategy);
-  }, [strategy]);
-
-  useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_savings_alloc`, String(savingsAllocation));
-  }, [savingsAllocation]);
-
-  useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_active_tab`, activeTab);
-  }, [activeTab]);
-
-  useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_dark_mode`, JSON.stringify(isDarkMode));
-    // Apply theme classes to HTML document element for smooth Tailwind styling
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
-      document.documentElement.style.backgroundColor = '#0f1511';
+      document.documentElement.style.backgroundColor = '#000000';
     } else {
       document.documentElement.classList.remove('dark');
       document.documentElement.style.backgroundColor = '#f5fbf5';
@@ -166,7 +138,7 @@ export default function App() {
 
   return (
     <div className={`min-h-screen font-sans antialiased transition-colors duration-300 ${
-      isDarkMode ? 'bg-[#0f1511] text-[#dee4de]' : 'bg-[#f5fbf5] text-[#171d19]'
+      isDarkMode ? 'bg-black text-[#dee4de]' : 'bg-[#f5fbf5] text-[#171d19]'
     }`}>
       
       {/* Top Header Navigation */}
@@ -190,7 +162,7 @@ export default function App() {
             onStart={() => setHasStarted(true)}
           />
         ) : (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 flex flex-col gap-6 md:gap-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-28 md:pb-8 flex flex-col gap-6 md:gap-8">
             
             {/* Step Stepper Progress Bar */}
             <section className="flex flex-col gap-4 max-w-xl" id="progress-indicator-section">
@@ -214,54 +186,112 @@ export default function App() {
                   transition={{ duration: 0.25 }}
                 >
                   {activeTab === 'base' && (
-                    <BaseTab
-                      isDarkMode={isDarkMode}
-                      currency={currencySymbol}
-                      income={income}
-                      setIncome={setIncome}
-                      fixedCosts={fixedCosts}
-                      setFixedCosts={setFixedCosts}
-                      onNext={() => setActiveTab('escaner')}
-                    />
+                    <div className="flex flex-col gap-6 md:gap-8">
+                      <BaseTab
+                        isDarkMode={isDarkMode}
+                        currency={currencySymbol}
+                        income={income}
+                        setIncome={setIncome}
+                        fixedCosts={fixedCosts}
+                        setFixedCosts={setFixedCosts}
+                        onNext={() => setActiveTab('escaner')}
+                      />
+                      <FinancialTips
+                        isDarkMode={isDarkMode}
+                        currency={currencySymbol}
+                        activeTab={activeTab}
+                        income={income}
+                        fixedCosts={fixedCosts}
+                        debts={debts}
+                        debtPct={debtPct}
+                        savingsPct={savingsPct}
+                        personalPct={personalPct}
+                        strategy={strategy}
+                      />
+                    </div>
                   )}
 
                   {activeTab === 'escaner' && (
-                    <ScannerTab
-                      isDarkMode={isDarkMode}
-                      currency={currencySymbol}
-                      debts={debts}
-                      setDebts={setDebts}
-                      onNext={() => setActiveTab('valvula')}
-                    />
+                    <div className="flex flex-col gap-6 md:gap-8">
+                      <ScannerTab
+                        isDarkMode={isDarkMode}
+                        currency={currencySymbol}
+                        debts={debts}
+                        setDebts={setDebts}
+                        onNext={() => setActiveTab('valvula')}
+                      />
+                      <FinancialTips
+                        isDarkMode={isDarkMode}
+                        currency={currencySymbol}
+                        activeTab={activeTab}
+                        income={income}
+                        fixedCosts={fixedCosts}
+                        debts={debts}
+                        debtPct={debtPct}
+                        savingsPct={savingsPct}
+                        personalPct={personalPct}
+                        strategy={strategy}
+                      />
+                    </div>
                   )}
 
                   {activeTab === 'valvula' && (
-                    <ValveTab
-                      isDarkMode={isDarkMode}
-                      currency={currencySymbol}
-                      income={income}
-                      totalCosts={totalCosts}
-                      acceleratorStrength={acceleratorStrength}
-                      setAcceleratorStrength={setAcceleratorStrength}
-                      strategy={strategy}
-                      setStrategy={setStrategy}
-                      savingsAllocation={savingsAllocation}
-                      setSavingsAllocation={setSavingsAllocation}
-                      onNext={() => setActiveTab('proyeccion')}
-                    />
+                    <div className="flex flex-col gap-6 md:gap-8">
+                      <ValveTab
+                        isDarkMode={isDarkMode}
+                        currency={currencySymbol}
+                        income={income}
+                        fixedCosts={fixedCosts}
+                        debts={debts}
+                        debtPct={debtPct}
+                        setDebtPct={setDebtPct}
+                        savingsPct={savingsPct}
+                        setSavingsPct={setSavingsPct}
+                        personalPct={personalPct}
+                        setPersonalPct={setPersonalPct}
+                        onNext={() => setActiveTab('proyeccion')}
+                      />
+                      <FinancialTips
+                        isDarkMode={isDarkMode}
+                        currency={currencySymbol}
+                        activeTab={activeTab}
+                        income={income}
+                        fixedCosts={fixedCosts}
+                        debts={debts}
+                        debtPct={debtPct}
+                        savingsPct={savingsPct}
+                        personalPct={personalPct}
+                        strategy={strategy}
+                      />
+                    </div>
                   )}
 
                   {activeTab === 'proyeccion' && (
-                    <ProjectionTab
-                      isDarkMode={isDarkMode}
-                      currency={currencySymbol}
-                      income={income}
-                      fixedCosts={fixedCosts}
-                      debts={debts}
-                      acceleratorStrength={acceleratorStrength}
-                      strategy={strategy}
-                      savingsAllocation={savingsAllocation}
-                    />
+                    <div className="flex flex-col gap-6 md:gap-8">
+                      <ProjectionTab
+                        isDarkMode={isDarkMode}
+                        currency={currencySymbol}
+                        income={income}
+                        fixedCosts={fixedCosts}
+                        debts={debts}
+                        debtPct={debtPct}
+                        savingsPct={savingsPct}
+                        personalPct={personalPct}
+                        strategy={strategy}
+                      />
+                      <FinancialTips
+                        isDarkMode={isDarkMode}
+                        currency={currencySymbol}
+                        activeTab={activeTab}
+                        income={income}
+                        fixedCosts={fixedCosts}
+                        debts={debts}
+                        debtPct={debtPct}
+                        savingsPct={savingsPct}
+                        personalPct={personalPct}
+                        strategy={strategy}
+                      />
+                    </div>
                   )}
                 </motion.div>
               </AnimatePresence>
