@@ -5,7 +5,6 @@ import BaseTab from './components/BaseTab';
 import ScannerTab from './components/ScannerTab';
 import ValveTab from './components/ValveTab';
 import ProjectionTab from './components/ProjectionTab';
-import FinancialTips from './components/FinancialTips';
 import { AppState, FixedCost, Debt, StrategyType } from './types';
 import { Database, ShieldAlert, Sliders, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -196,18 +195,6 @@ export default function App() {
                         setFixedCosts={setFixedCosts}
                         onNext={() => setActiveTab('escaner')}
                       />
-                      <FinancialTips
-                        isDarkMode={isDarkMode}
-                        currency={currencySymbol}
-                        activeTab={activeTab}
-                        income={income}
-                        fixedCosts={fixedCosts}
-                        debts={debts}
-                        debtPct={debtPct}
-                        savingsPct={savingsPct}
-                        personalPct={personalPct}
-                        strategy={strategy}
-                      />
                     </div>
                   )}
 
@@ -219,18 +206,6 @@ export default function App() {
                         debts={debts}
                         setDebts={setDebts}
                         onNext={() => setActiveTab('valvula')}
-                      />
-                      <FinancialTips
-                        isDarkMode={isDarkMode}
-                        currency={currencySymbol}
-                        activeTab={activeTab}
-                        income={income}
-                        fixedCosts={fixedCosts}
-                        debts={debts}
-                        debtPct={debtPct}
-                        savingsPct={savingsPct}
-                        personalPct={personalPct}
-                        strategy={strategy}
                       />
                     </div>
                   )}
@@ -251,18 +226,6 @@ export default function App() {
                         setPersonalPct={setPersonalPct}
                         onNext={() => setActiveTab('proyeccion')}
                       />
-                      <FinancialTips
-                        isDarkMode={isDarkMode}
-                        currency={currencySymbol}
-                        activeTab={activeTab}
-                        income={income}
-                        fixedCosts={fixedCosts}
-                        debts={debts}
-                        debtPct={debtPct}
-                        savingsPct={savingsPct}
-                        personalPct={personalPct}
-                        strategy={strategy}
-                      />
                     </div>
                   )}
 
@@ -271,18 +234,6 @@ export default function App() {
                       <ProjectionTab
                         isDarkMode={isDarkMode}
                         currency={currencySymbol}
-                        income={income}
-                        fixedCosts={fixedCosts}
-                        debts={debts}
-                        debtPct={debtPct}
-                        savingsPct={savingsPct}
-                        personalPct={personalPct}
-                        strategy={strategy}
-                      />
-                      <FinancialTips
-                        isDarkMode={isDarkMode}
-                        currency={currencySymbol}
-                        activeTab={activeTab}
                         income={income}
                         fixedCosts={fixedCosts}
                         debts={debts}
