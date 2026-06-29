@@ -140,7 +140,7 @@ export default function BaseTab({
             <div className="w-10 h-10 rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 flex items-center justify-center">
               <Home className="w-5 h-5 fill-current" />
             </div>
-            <h3 className="text-base md:text-lg font-bold">Gastos Innegociables (Sin Deudas)</h3>
+            <h3 className="text-base md:text-lg font-bold">Gastos Innegociables</h3>
           </div>
 
           <div className="flex flex-col gap-4 max-h-[28rem] overflow-y-auto pr-1" id="costs-grid-container">
@@ -159,7 +159,7 @@ export default function BaseTab({
 
             {fixedCosts.length === 0 && (
               <div className="text-center py-6 text-gray-400 dark:text-[#87948b]">
-                No hay costos agregados. Agrega tus gastos obligatorios mensuales.
+                No hay gastos agregados. Agrega tus gastos obligatorios mensuales.
               </div>
             )}
           </div>
@@ -174,7 +174,7 @@ export default function BaseTab({
             id="add-cost-row-btn"
           >
             <Plus className="w-4 h-4" />
-            Añadir otro costo innegociable
+            Añadir otro gasto innegociable
           </button>
         </div>
       </div>
@@ -198,7 +198,7 @@ export default function BaseTab({
             <div>
               <h4 className="font-bold text-sm font-display">Alerta de Gasto Elevado</h4>
               <p className="text-xs mt-1 leading-relaxed opacity-90">
-                Tus costos innegociables representan el <span className="font-bold">{costPercentage.toFixed(1)}%</span> de tus ingresos totales. Esto supera el límite saludable recomendado del 80%, reduciendo de forma crítica tu capacidad para acumular ahorros o amortizar deudas con rapidez. Considera optimizar tus gastos fijos.
+                Tus gastos innegociables representan el <span className="font-bold">{costPercentage.toFixed(1)}%</span> de tus ingresos totales. Esto supera el límite saludable recomendado del 80%, reduciendo de forma crítica tu capacidad para acumular ahorros o para amortizar deudas con rapidez. Considera optimizar tus gastos innegociables.
               </p>
             </div>
           </motion.div>

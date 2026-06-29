@@ -5,6 +5,7 @@ interface WealthAccumulationCardProps {
   currency: string;
   savingsBasic: number;
   savingsCDT: number;
+  cdtAnnualRatePct?: number;
 }
 
 export default function WealthAccumulationCard({
@@ -12,6 +13,7 @@ export default function WealthAccumulationCard({
   currency,
   savingsBasic,
   savingsCDT,
+  cdtAnnualRatePct = 10,
 }: WealthAccumulationCardProps) {
   return (
     <div className={`p-6 rounded-2xl border ambient-shadow flex flex-col gap-4 transition-colors ${
@@ -43,7 +45,7 @@ export default function WealthAccumulationCard({
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
               CDT Garantizado
             </span>
-            <span className="text-[9px] text-gray-400 font-medium">Depósito Plazo Fijo 10% anual</span>
+            <span className="text-[9px] text-gray-400 font-medium">Depósito Plazo Fijo {cdtAnnualRatePct}% anual</span>
           </div>
           <span className="text-base font-black font-display text-emerald-500">
             {currency}{savingsCDT.toLocaleString('en-US', { maximumFractionDigits: 0 })}

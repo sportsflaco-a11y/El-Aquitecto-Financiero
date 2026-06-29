@@ -59,7 +59,7 @@ export default function AllocationBreakdown({
 
   const allocationData = [
     { 
-      name: 'Gastos Fijos', 
+      name: 'Gastos Innegociables', 
       value: fixedCostsValue, 
       color: isDarkMode ? '#60a5fa' : '#3b82f6', 
       desc: 'Tus cimientos innegociables para el día a día.' 

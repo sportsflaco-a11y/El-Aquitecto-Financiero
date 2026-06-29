@@ -112,7 +112,7 @@ export default function Header({
             id="nav-tab-proyeccion"
           >
             <TrendingUp className="w-4 h-4" />
-            Proyección
+            Tu Proyección
           </button>
         </nav>
       )}

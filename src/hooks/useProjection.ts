@@ -24,6 +24,7 @@ interface UseProjectionProps {
   savingsPct: number;
   personalPct: number;
   strategy: StrategyType;
+  cdtAnnualRate?: number;
 }
 
 export function useProjection({
@@ -34,6 +35,7 @@ export function useProjection({
   savingsPct,
   personalPct,
   strategy,
+  cdtAnnualRate = 0.10,
 }: UseProjectionProps) {
   return useMemo(() => {
     const monthsCount = 120; // 10 years
@@ -65,7 +67,6 @@ export function useProjection({
     const basicAnnualRate = 0.02; // 2% basic interest rate for standard savings
     const basicMonthlyRate = basicAnnualRate / 12;
 
-    const cdtAnnualRate = 0.10; // 10% guaranteed interest rate
     const cdtMonthlyRate = cdtAnnualRate / 12;
 
     for (let m = 1; m <= monthsCount; m++) {
@@ -227,5 +228,5 @@ export function useProjection({
         acDebtFreeMonth,
       }
     };
-  }, [income, fixedCosts, debts, debtPct, savingsPct, personalPct, strategy]);
+  }, [income, fixedCosts, debts, debtPct, savingsPct, personalPct, strategy, cdtAnnualRate]);
 }

@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 
 interface KPICardProps {
-  label: string;
+  label: ReactNode;
   value: string | number;
   icon: ReactNode;
   isDarkMode: boolean;

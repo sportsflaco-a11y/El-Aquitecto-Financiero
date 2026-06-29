@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Debt, StrategyType } from '../types';
 import { Rocket, Info, Download } from 'lucide-react';
 import { useProjection } from '../hooks/useProjection';
-import { formatMonths } from '../utils';
+import { formatMonths, downloadCSVReport } from '../utils';
+import { useLocalStorageState } from '../hooks/useLocalStorageState';
 import WealthChart from './WealthChart';
 import AllocationBreakdown from './AllocationBreakdown';
 import DebtPayoffCard from './DebtPayoffCard';
@@ -33,6 +34,12 @@ export default function ProjectionTab({
 }: ProjectionTabProps) {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
+  // User defined CDT / deposit rate (%) with localStorage support
+  const [cdtAnnualRatePct, setCdtAnnualRatePct] = useLocalStorageState<number>(
+    'el_arquitecto_cdt_rate_v1',
+    10
+  );
+
   // Core Math Engine abstracted into a custom hook
   const { monthlyData, kpis } = useProjection({
     income,
@@ -42,6 +49,7 @@ export default function ProjectionTab({
     savingsPct,
     personalPct,
     strategy,
+    cdtAnnualRate: cdtAnnualRatePct / 100,
   });
 
   // Calculate allocation breakdown
@@ -56,77 +64,22 @@ export default function ProjectionTab({
   const monthlyPersonalSpend = surplus * (personalPct / 100);
 
   const handleDownloadReport = () => {
-    const csvRows: string[] = [];
-
-    // Header & metadata
-    csvRows.push('REPORTE PLAN MAESTRO DE ACELERACIÓN FINANCIERA');
-    csvRows.push(`Fecha de generación: ${new Date().toLocaleDateString('es-ES')} ${new Date().toLocaleTimeString('es-ES')}`);
-    csvRows.push('');
-
-    // Profile summary
-    csvRows.push('1. RESUMEN DEL PERFIL FINANCIERO');
-    csvRows.push(`Moneda seleccionada;${currency}`);
-    csvRows.push(`Ingresos Mensuales;${income.toFixed(2)}`);
-    csvRows.push(`Costos Fijos Totales;${totalCosts.toFixed(2)}`);
-    csvRows.push(`Sobrante Mensual Neto (La Base - El Escáner);${surplus.toFixed(2)}`);
-    csvRows.push(`Pago Extra de Deudas;${debtPct}% (${monthlyExtraDebtPayoff.toFixed(2)} /mes)`);
-    csvRows.push(`Reserva de Ahorros;${savingsPct}% (${monthlySavingsBuild.toFixed(2)} /mes)`);
-    csvRows.push(`Gastos Personales;${personalPct}% (${monthlyPersonalSpend.toFixed(2)} /mes)`);
-    csvRows.push(`Estrategia de Deuda;${strategy === 'snowball' ? 'Bola de Nieve (Menor Saldo)' : 'Avalancha (Mayor Interés)'}`);
-    csvRows.push('');
-
-    // Performance outcomes
-    csvRows.push('2. PROYECCIÓN DE LOGROS E IMPACTO');
-    csvRows.push(`Años Ahorrados en Deuda;${kpis.yearsSaved === 0 ? 'Sin Deudas' : `${kpis.yearsSaved} Años`}`);
-    csvRows.push(`Intereses Totales Evitados;${kpis.totalInterestSaved.toFixed(2)}`);
-    const finalMonth = monthlyData[monthlyData.length - 1];
-    if (finalMonth) {
-      csvRows.push(`Patrimonio Proyectado a 10 años (Status Quo);${finalMonth.statusQuoValue.toFixed(2)}`);
-      csvRows.push(`Patrimonio Proyectado a 10 años (Acelerador);${finalMonth.acceleratorValue.toFixed(2)}`);
-      csvRows.push(`Diferencia de Riqueza Generada;${(finalMonth.acceleratorValue - finalMonth.statusQuoValue).toFixed(2)}`);
-    }
-    csvRows.push('');
-
-    // Debts registered
-    csvRows.push('3. INVENTARIO DE DEUDAS');
-    csvRows.push('ID;Nombre de la Deuda;Saldo Pendiente;Pago Mínimo');
-    if (debts.length === 0) {
-      csvRows.push('-;Sin deudas registradas;0.00;0.00');
-    } else {
-      debts.forEach((debt, idx) => {
-        csvRows.push(`${idx + 1};${debt.name || `Deuda ${idx + 1}`};${debt.balance.toFixed(2)};${debt.minPayment.toFixed(2)}`);
-      });
-    }
-    csvRows.push('');
-
-    // Month-by-month trajectory
-    csvRows.push('4. TRAYECTORIA MENSUAL PROYECTADA (120 MESES)');
-    csvRows.push('Mes;Año;Patrimonio Status Quo;Patrimonio Acelerador;Deuda Status Quo;Deuda Acelerador;Activos Status Quo;Activos Acelerador');
-    monthlyData.forEach((row) => {
-      csvRows.push([
-        row.month,
-        row.year,
-        row.statusQuoValue.toFixed(2),
-        row.acceleratorValue.toFixed(2),
-        row.statusQuoDebt.toFixed(2),
-        row.acceleratorDebt.toFixed(2),
-        row.statusQuoAssets.toFixed(2),
-        row.acceleratorAssets.toFixed(2)
-      ].join(';'));
+    downloadCSVReport({
+      currency,
+      income,
+      totalCosts,
+      surplus,
+      debtPct,
+      savingsPct,
+      personalPct,
+      monthlyExtraDebtPayoff,
+      monthlySavingsBuild,
+      monthlyPersonalSpend,
+      strategy,
+      kpis,
+      monthlyData,
+      debts,
     });
-
-    const csvContent = csvRows.join('\n');
-    // Prepend UTF-8 Byte Order Mark (BOM) so Excel reads international characters perfectly
-    const blob = new Blob(['\uFEFF', csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Reporte_Acelerador_Financiero_${new Date().toISOString().slice(0, 10)}.csv`;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
   };
 
   return (
@@ -138,12 +91,12 @@ export default function ProjectionTab({
           <h2 className={`text-xl md:text-2xl font-bold tracking-tight ${
             isDarkMode ? 'text-[#dee4de]' : 'text-[#171d19]'
           }`}>
-            Tu Futuro Arquitectónico
+            Tu Futuro Financiero
           </h2>
           <p className={`text-sm md:text-base ${
             isDarkMode ? 'text-[#bccac0]' : 'text-[#3d4a42]'
           }`}>
-            La proyección muestra el impacto acumulativo de tu acelerador en tu patrimonio neto total (activos menos pasivos).
+            La proyección muestra el impacto acumulado de tu ACELERADOR en tu patrimonio neto (nuevos activos menos antiguos pasivos)
           </p>
         </div>
 
@@ -159,6 +112,50 @@ export default function ProjectionTab({
           <Download className="w-4 h-4" />
           Descargar Reporte
         </button>
+      </div>
+
+      {/* Advice Encouraging Card (Multiplicación Inteligente) */}
+      <div className={`p-5 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-6 ${
+        isDarkMode ? 'bg-black border-[#3d4a42]/20 text-[#dee4de]' : 'bg-[#f5fbf5] border-[#bccac0]/30 text-[#171d19]'
+      }`} id="projection-advice-card">
+        <div className="flex-1 flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <Rocket className={`w-4 h-4 ${isDarkMode ? 'text-[#68dba9]' : 'text-[#006948]'}`} />
+            <h4 className="font-bold text-sm font-display">Multiplicación Inteligente</h4>
+          </div>
+          <p className="text-xs md:text-sm leading-relaxed opacity-95">
+            Además de blindar tu dinero contra la inflación, es necesario que haya un acelerador que haga crecer exponencialmente tu patrimonio. Hacer depósitos a plazos fijos (CDT, CDAT, CDP) te permite esto sin asumir riesgos de mercado. Busca una tasa de interés anual que supere la inflación mínimo en 4 puntos porcentuales (4%). P. ej.: si la inflación en tu país es del 5,6%, entonces debes obtener en tu depósito como mínimo una tasa del 10% anual.
+          </p>
+        </div>
+
+        {/* Dynamic Rate input field */}
+        <div className="w-full md:w-80 shrink-0 border-t md:border-t-0 md:border-l border-dashed border-gray-200 dark:border-[#3d4a42]/30 pt-4 md:pt-0 md:pl-6 flex flex-col gap-2">
+          <label className={`block text-xs font-bold uppercase tracking-wider ${isDarkMode ? 'text-[#68dba9]' : 'text-[#006948]'}`}>
+            Escribe la Tasa de tu Depósito a Plazo en tu país
+          </label>
+          <div className="relative rounded-xl shadow-sm">
+            <input
+              type="number"
+              min="0"
+              max="100"
+              step="0.1"
+              value={cdtAnnualRatePct}
+              onChange={(e) => {
+                const val = parseFloat(e.target.value);
+                setCdtAnnualRatePct(isNaN(val) ? 0 : val);
+              }}
+              className={`w-full font-display font-black text-lg px-4 py-2 rounded-xl transition-all border outline-none focus:ring-2 ${
+                isDarkMode 
+                  ? 'bg-black border-[#3d4a42]/40 text-[#dee4de] focus:border-[#68dba9] focus:ring-[#68dba9]/20' 
+                  : 'bg-white border-gray-200 text-[#171d19] focus:border-[#006948] focus:ring-[#006948]/10'
+              }`}
+              placeholder="10.0"
+            />
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+              <span className={`font-black font-display text-lg ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>%</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Main Grid: Chart & Advice Card */}
@@ -183,6 +180,7 @@ export default function ProjectionTab({
               monthlyData={monthlyData}
               hoverIndex={hoverIndex}
               setHoverIndex={setHoverIndex}
+              cdtAnnualRatePct={cdtAnnualRatePct}
             />
 
             <p className="text-2xs text-center text-gray-400 dark:text-[#87948b] italic flex items-center justify-center gap-1">
@@ -223,20 +221,8 @@ export default function ProjectionTab({
             currency={currency}
             savingsBasic={monthlyData[119]?.savingsBasic || 0}
             savingsCDT={monthlyData[119]?.savingsCDT || 0}
+            cdtAnnualRatePct={cdtAnnualRatePct}
           />
-
-          {/* Advice Encouraging Card */}
-          <div className={`p-5 rounded-2xl border flex flex-col gap-3 ${
-            isDarkMode ? 'bg-black border-[#3d4a42]/20 text-[#dee4de]' : 'bg-[#f5fbf5] border-[#bccac0]/30 text-[#171d19]'
-          }`} id="projection-advice-card">
-            <div className="flex items-center gap-2">
-              <Rocket className={`w-4 h-4 ${isDarkMode ? 'text-[#68dba9]' : 'text-[#006948]'}`} />
-              <h4 className="font-bold text-xs font-display">Multiplicación Inteligente</h4>
-            </div>
-            <p className="text-[10px] leading-relaxed opacity-90">
-              Un CDT, CDP o Depósito a Plazo Fijo al 10% de interés anual te permite blindar tu dinero contra la inflación y acelerar de manera exponencial tu patrimonio neto, sin asumir riesgos de mercado.
-            </p>
-          </div>
 
         </div>
 

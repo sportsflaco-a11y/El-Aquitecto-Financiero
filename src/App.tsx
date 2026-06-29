@@ -13,13 +13,13 @@ import { useLocalStorageState } from './hooks/useLocalStorageState';
 const LOCAL_STORAGE_KEY = 'el_arquitecto_state_v1';
 
 const initialFixedCosts: FixedCost[] = [
-  { id: '1', name: 'Renta / Hipoteca', value: 1500 },
-  { id: '2', name: 'Servicios Básicos', value: 300 },
+  { id: '1', name: 'Alquiler/Renta', value: 0 },
+  { id: '2', name: 'Servicios Básicos', value: 0 },
 ];
 
 const initialDebts: Debt[] = [
-  { id: '1', name: 'Tarjeta de Crédito', balance: 5000, interestRate: 18.5, minPayment: 150 },
-  { id: '2', name: 'Préstamo de Auto', balance: 12000, interestRate: 5.5, minPayment: 250 },
+  { id: '1', name: 'Tarjeta de Crédito', balance: 0, interestRate: 0, minPayment: 0 },
+  { id: '2', name: 'Préstamo de Auto', balance: 0, interestRate: 0, minPayment: 0 },
 ];
 
 export default function App() {
@@ -58,7 +58,7 @@ export default function App() {
 
   const [income, setIncome] = useLocalStorageState<number>(
     `${LOCAL_STORAGE_KEY}_income`,
-    5000
+    0
   );
 
   const [fixedCosts, setFixedCosts] = useLocalStorageState<FixedCost[]>(
@@ -117,6 +117,13 @@ export default function App() {
   const resetApp = () => {
     setHasStarted(false);
     setActiveTab('base');
+    setIncome(0);
+    setFixedCosts(initialFixedCosts);
+    setDebts(initialDebts);
+    setDebtPct(40);
+    setSavingsPct(30);
+    setPersonalPct(30);
+    setStrategy('avalanche');
   };
 
   // Calculations for sub-navigation support
@@ -203,6 +210,7 @@ export default function App() {
                       <ScannerTab
                         isDarkMode={isDarkMode}
                         currency={currencySymbol}
+                        income={income}
                         debts={debts}
                         setDebts={setDebts}
                         onNext={() => setActiveTab('valvula')}
@@ -314,7 +322,7 @@ export default function App() {
             id="mobile-nav-proyeccion"
           >
             <TrendingUp className="w-5 h-5" />
-            <span className="text-[10px] font-bold font-display">Proyección</span>
+            <span className="text-[10px] font-bold font-display">Tu Proyección</span>
           </button>
         </nav>
       )}

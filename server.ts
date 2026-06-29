@@ -44,7 +44,7 @@ async function startServer() {
 
         Datos financieros del usuario:
         - Ingreso Mensual: $${financeData.income}
-        - Gastos Fijos: $${financeData.fixedCosts}
+        - Gastos Innegociables: $${financeData.fixedCosts}
         - Cuota Mínima de Deudas: $${financeData.totalMinPayment}
         - Excedente Real (Sobrante): $${financeData.surplus}
         - Estrategia de Deudas Activa: ${financeData.strategy || "Bola de Nieve"}
@@ -61,7 +61,7 @@ async function startServer() {
         2. Analiza si tiene deudas y si su distribución de excedente es óptima. Por ejemplo:
            - Si tiene deudas y su "Reserva de Ahorro" o "Gastos Personales" es muy alta y "Pago Ocasional de Deudas" es bajo, sugiérele priorizar liquidar deudas primero para ahorrar intereses.
            - Si no tiene deudas, felicítalo y sugiérele cómo optimizar su "Reserva de Ahorro" (p. ej., fondos de alta rentabilidad o CDTs) o disfrutar responsablemente de sus "Gastos Personales".
-           - Si el Excedente es negativo o cero, aconséjale sobre cómo recortar Gastos Fijos o buscar ingresos extra.
+           - Si el Excedente es negativo o cero, aconséjale sobre cómo recortar Gastos Innegociables o buscar ingresos extra.
         3. Mantén el tono amigable, motivador y directo. Usa formato Markdown simple (negritas, viñetas cortas si es necesario).
         4. Idioma: Español.
       `;

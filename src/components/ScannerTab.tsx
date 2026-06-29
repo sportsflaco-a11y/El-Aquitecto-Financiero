@@ -1,13 +1,15 @@
-import { useMemo } from 'react';
 import { Debt } from '../types';
+import { useScannerMetrics } from '../hooks/useScannerMetrics';
 import { Plus, AlertTriangle, Landmark, ShieldAlert, ArrowRight, Percent, Coins, TrendingDown } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { AnimatePresence } from 'motion/react';
 import KPICard from './KPICard';
 import DebtRow from './DebtRow';
+import AvailabilityAnalysis from './AvailabilityAnalysis';
 
 interface ScannerTabProps {
   isDarkMode: boolean;
   currency: string;
+  income: number;
   debts: Debt[];
   setDebts: (debts: Debt[]) => void;
   onNext: () => void;
@@ -16,6 +18,7 @@ interface ScannerTabProps {
 export default function ScannerTab({
   isDarkMode,
   currency,
+  income,
   debts,
   setDebts,
   onNext,
@@ -50,31 +53,8 @@ export default function ScannerTab({
     );
   };
 
-  // Calculate metrics using useMemo for efficiency and clean isolation
-  const metrics = useMemo(() => {
-    const totalDebt = debts.reduce((sum, d) => sum + (Number(d.balance) || 0), 0);
-    const totalMinPayment = debts.reduce((sum, d) => sum + (Number(d.minPayment) || 0), 0);
-    
-    // Weighted average interest rate
-    const totalDebtForAvg = debts.reduce((sum, d) => sum + (d.balance > 0 ? Number(d.balance) : 0), 0);
-    const weightedInterestSum = debts.reduce((sum, d) => sum + (Number(d.balance) * Number(d.interestRate) || 0), 0);
-    const avgInterestRate = totalDebtForAvg > 0 ? (weightedInterestSum / totalDebtForAvg) : 0;
-
-    // Monthly Interest Leak (Balance * Rate / 100 / 12)
-    const monthlyInterestLeak = debts.reduce((sum, d) => sum + ((Number(d.balance) * (Number(d.interestRate) / 100)) / 12 || 0), 0);
-
-    // High Interest Threshold is 10%
-    const isHighInterest = (rate: number) => rate >= 10;
-    const highInterestDebtsCount = debts.filter(d => isHighInterest(d.interestRate) && d.balance > 0).length;
-
-    return {
-      totalDebt,
-      avgInterestRate,
-      totalMinPayment,
-      monthlyInterestLeak,
-      highInterestDebtsCount,
-    };
-  }, [debts]);
+  // Calculate metrics using custom hook
+  const metrics = useScannerMetrics(debts, income);
 
   return (
     <div className="flex flex-col gap-8 md:gap-10 pb-12" id="scanner-tab-root">
@@ -146,7 +126,7 @@ export default function ScannerTab({
       </div>
 
       {/* Metrics Banner - Placed after Listado de Pasivos */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="scanner-metrics-grid">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4" id="scanner-metrics-grid">
         <KPICard
           label="Deuda Total"
           value={`${currency}${metrics.totalDebt.toLocaleString('en-US', { maximumFractionDigits: 0 })}`}
@@ -169,35 +149,38 @@ export default function ScannerTab({
         />
 
         <KPICard
-          label="Fuga de Interés Mensual"
+          label={
+            <span className="flex flex-col">
+              <span>Fuga de Capital</span>
+              <span className="text-[10px] opacity-85 font-semibold leading-none mt-0.5">Interés Mensual</span>
+            </span>
+          }
           value={`${currency}${metrics.monthlyInterestLeak.toLocaleString('en-US', { maximumFractionDigits: 2 })}`}
           isDarkMode={isDarkMode}
           highlight={metrics.highInterestDebtsCount > 0}
           icon={metrics.highInterestDebtsCount > 0 ? <AlertTriangle className="w-5 h-5 text-amber-500 animate-pulse" /> : <Coins className="w-5 h-5" />}
         />
+
+        <KPICard
+          label={
+            <span className="flex flex-col">
+              <span>Pérdida de Disponibilidad</span>
+              <span className="text-[10px] opacity-85 font-semibold leading-none mt-0.5">Porcentaje del Ingreso</span>
+            </span>
+          }
+          value={`${metrics.lossOfAvailability.toFixed(1)}%`}
+          isDarkMode={isDarkMode}
+          highlight={metrics.lossOfAvailability > 15}
+          icon={<ShieldAlert className={`w-5 h-5 ${metrics.lossOfAvailability > 15 ? 'text-amber-500 animate-pulse' : ''}`} />}
+        />
       </div>
 
-      {/* Structural Risk Alert */}
-      {metrics.highInterestDebtsCount > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`p-4 rounded-xl border flex items-start gap-3 ${
-            isDarkMode 
-              ? 'bg-amber-950/10 border-amber-500/20 text-amber-300' 
-              : 'bg-amber-50 border-amber-100 text-amber-900'
-          }`}
-          id="scanner-alert-box"
-        >
-          <ShieldAlert className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-          <div>
-            <h4 className="font-bold text-sm font-display">Riesgo Estructural Detectado</h4>
-            <p className="text-xs mt-0.5 opacity-90">
-              Tienes {metrics.highInterestDebtsCount} {metrics.highInterestDebtsCount === 1 ? 'deuda' : 'deudas'} con tasas superiores al 10%. Estas deudas actúan como fugas de dinero críticas que erosionan tu patrimonio mensual. Es imperativo priorizarlas.
-            </p>
-          </div>
-        </motion.div>
-      )}
+      {/* Loss of Availability Analysis & Alerts */}
+      <AvailabilityAnalysis
+        isDarkMode={isDarkMode}
+        income={income}
+        lossOfAvailability={metrics.lossOfAvailability}
+      />
 
       {/* Next CTA Panel */}
       <div className="flex justify-end mt-4" id="scanner-nav-container">

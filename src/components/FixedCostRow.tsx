@@ -31,7 +31,7 @@ export default function FixedCostRow({
       <div className="flex items-center justify-between gap-2">
         <input
           type="text"
-          placeholder="Nombre del Costo (e.g. Alquiler)"
+          placeholder="Nombre del Gasto (e.g. Alquiler)"
           className={`bg-transparent font-sans text-xs md:text-sm font-semibold focus:outline-none placeholder-gray-400 dark:placeholder-gray-500 w-full py-1 ${
             isDarkMode ? 'text-[#dee4de] focus:text-[#68dba9]' : 'text-[#171d19] focus:text-[#006948]'
           }`}
@@ -41,7 +41,7 @@ export default function FixedCostRow({
         <button
           onClick={() => onRemove(cost.id)}
           className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-full transition-colors cursor-pointer"
-          aria-label="Eliminar costo"
+          aria-label="Eliminar gasto"
         >
           <Trash2 className="w-4 h-4" />
         </button>

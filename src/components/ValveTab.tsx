@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { StrategyType, Debt } from '../types';
 import { Sliders, Zap, Award, Scale, ArrowRight } from 'lucide-react';
 import ValveSlider from './ValveSlider';
@@ -38,6 +39,23 @@ export default function ValveTab({
   
   // Real Surplus is La Base minus El Escáner
   const surplus = Math.max(0, income - totalFixedCosts - totalDebtPayments);
+
+  // Force 0% for extra debt payment when minimum debt payment is 0 and redistribute
+  useEffect(() => {
+    if (totalDebtPayments === 0 && debtPct > 0) {
+      setDebtPct(0);
+      const remaining = 100;
+      const otherSum = savingsPct + personalPct;
+      if (otherSum > 0) {
+        const newSavings = Math.round((savingsPct / otherSum) * remaining);
+        setSavingsPct(newSavings);
+        setPersonalPct(remaining - newSavings);
+      } else {
+        setSavingsPct(50);
+        setPersonalPct(50);
+      }
+    }
+  }, [totalDebtPayments, debtPct, savingsPct, personalPct, setDebtPct, setSavingsPct, setPersonalPct]);
 
   const monthlyExtraDebtPayoff = surplus * (debtPct / 100);
   const monthlySavingsBuild = surplus * (savingsPct / 100);
@@ -116,7 +134,7 @@ export default function ValveTab({
         <p className={`text-sm md:text-base ${
           isDarkMode ? 'text-[#bccac0]' : 'text-[#3d4a42]'
         }`}>
-          Configura cómo distribuirás el excedente real de tu dinero después de cubrir tus gastos fijos y los pagos mínimos de deudas.
+          Distribuye el excedente de dinero mensual después de cubrir tus gastos innegociables y el pago mínimo de deudas.
         </p>
       </div>
 
@@ -134,7 +152,7 @@ export default function ValveTab({
             <h4 className="font-bold text-sm md:text-base font-display">Sobrante Mensual Disponible</h4>
             <p className="text-xs text-gray-400 dark:text-[#87948b] mt-0.5">
               Calculado como: <strong className="text-emerald-500 font-sans">La Base</strong> ({currency}{income.toLocaleString()}) 
-              &minus; <strong className="text-emerald-500 font-sans">Costos Fijos</strong> ({currency}{totalFixedCosts.toLocaleString()})
+              &minus; <strong className="text-emerald-500 font-sans">Gastos Innegociables</strong> ({currency}{totalFixedCosts.toLocaleString()})
               &minus; <strong className="text-amber-500 font-sans">Mínimo Deudas</strong> ({currency}{totalDebtPayments.toLocaleString()})
             </p>
           </div>
@@ -177,8 +195,8 @@ export default function ValveTab({
             currency={currency}
             icon={<Zap className="w-5 h-5 fill-amber-500" />}
             label="Pago Ocasional de Deudas"
-            description="Para amortizar capital de pasivos de raíz"
-            subDescription="Amortización adicional sobre tus pasivos para matar intereses de raíz y acortar drásticamente los plazos."
+            description="Para amortizar el capital de los pasivos"
+            subDescription="Amortización adicional de tus pasivos para disminuir los intereses y acortar drásticamente los plazos. Al abonar a capital “matas” la raíz de los intereses."
             percentage={debtPct}
             monthlyAmount={monthlyExtraDebtPayoff}
             color="#f59e0b"
@@ -186,6 +204,8 @@ export default function ValveTab({
             textClass="text-amber-500"
             btnTextClass="text-amber-400 border border-[#3d4a42]/40"
             onChange={(val) => handleSliderChange('debt', val)}
+            disabled={totalDebtPayments === 0}
+            disabledMessage="No tienes deudas activas registradas. El porcentaje se fija automáticamente en 0%."
           />
 
           {/* Option 2: Reserva de Ahorros */}

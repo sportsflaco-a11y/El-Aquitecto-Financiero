@@ -27,7 +27,7 @@ export default function DebtPayoffCard({
         <div className={`flex flex-col p-3 rounded-xl border transition-colors ${
           isDarkMode ? 'border-red-950/20 bg-black' : 'border-red-100/50 bg-[#f5fbf5]'
         }`}>
-          <span className="text-[10px] font-bold uppercase text-red-500/80 tracking-wider">Solo Cuotas Fijas (Mínimos)</span>
+          <span className="text-[10px] font-bold uppercase text-red-500/80 tracking-wider">SOLO CON PAGOS MÍNIMOS</span>
           <span className="text-base font-black font-display tracking-tight text-red-500/90 mt-0.5">
             {sqDebtFreeMonth === -1 ? 'Más de 10 años (120+ meses)' : formatMonths(sqDebtFreeMonth)}
           </span>
