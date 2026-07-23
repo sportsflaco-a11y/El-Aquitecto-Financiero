@@ -1,6 +1,10 @@
-{
-  "name": "El Arquitecto",
-  "description": "Plano maestro interactivo para estructurar tus cimientos económicos, escanear pasivos y proyectar tu libertad financiera.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
+import {StrictMode} from 'react';
+import {createRoot} from 'react-dom/client';
+import App from './App.tsx';
+import './index.css';
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);
