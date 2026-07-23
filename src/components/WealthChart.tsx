@@ -3,10 +3,12 @@ import { MonthData } from '../hooks/useProjection';
 import ChartControls from './ChartControls';
 import ChartLegends from './ChartLegends';
 import ChartTooltip from './ChartTooltip';
+import { formatCurrencyNumber } from '../utils';
 
 interface WealthChartProps {
   isDarkMode: boolean;
   currency: string;
+  currencyCode: string;
   monthlyData: MonthData[];
   hoverIndex: number | null;
   setHoverIndex: (idx: number | null) => void;
@@ -16,6 +18,7 @@ interface WealthChartProps {
 export default function WealthChart({
   isDarkMode,
   currency,
+  currencyCode,
   monthlyData,
   hoverIndex,
   setHoverIndex,
@@ -148,7 +151,7 @@ export default function WealthChart({
                   textAnchor="end" 
                   className="font-sans text-[9px] fill-gray-400 font-semibold"
                 >
-                  {currency}{gridVal >= 1000000 ? `${(gridVal / 1000000).toFixed(1)}M` : gridVal >= 1000 ? `${(gridVal / 1000).toFixed(0)}k` : gridVal.toFixed(0)}
+                  {currency}{gridVal >= 1000000 ? `${(gridVal / 1000000).toFixed(1)}M` : gridVal >= 1000 ? `${(gridVal / 1000).toFixed(0)}k` : formatCurrencyNumber(gridVal, currencyCode)}
                 </text>
               </g>
             );
@@ -331,6 +334,7 @@ export default function WealthChart({
           <ChartTooltip
             isDarkMode={isDarkMode}
             currency={currency}
+            currencyCode={currencyCode}
             chartMode={chartMode}
             activeHoverData={activeHoverData}
             showDebt={showDebt}

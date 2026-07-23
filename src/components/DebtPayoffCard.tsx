@@ -5,14 +5,14 @@ interface DebtPayoffCardProps {
   isDarkMode: boolean;
   sqDebtFreeMonth: number;
   acDebtFreeMonth: number;
-  yearsSaved: number;
+  monthsSaved: number;
 }
 
 export default function DebtPayoffCard({
   isDarkMode,
   sqDebtFreeMonth,
   acDebtFreeMonth,
-  yearsSaved,
+  monthsSaved,
 }: DebtPayoffCardProps) {
   return (
     <div className={`p-6 rounded-2xl border ambient-shadow flex flex-col gap-4 transition-colors ${
@@ -52,12 +52,12 @@ export default function DebtPayoffCard({
         </div>
       </div>
 
-      {yearsSaved > 0 && (
+      {monthsSaved > 0 && (
         <div className={`p-3 border rounded-xl text-center text-xs font-bold flex items-center justify-center gap-1.5 transition-colors ${
           isDarkMode ? 'bg-black border-emerald-500/20 text-[#68dba9]' : 'bg-[#f5fbf5] border-emerald-500/20 text-emerald-600'
         }`}>
           <Rocket className="w-4 h-4 shrink-0" />
-          ¡Te liberas de deudas {yearsSaved === 1 ? '1 año' : `${yearsSaved} años`} antes!
+          ¡Te liberas de deudas {formatMonths(monthsSaved)} antes!
         </div>
       )}
     </div>

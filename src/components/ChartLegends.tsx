@@ -101,7 +101,7 @@ export default function ChartLegends({
               <span className={`w-2.5 h-2.5 rounded-full ${showCDT && focusMode === 'all' ? 'bg-[#10b981]' : isDarkMode ? 'bg-[#3d4a42]' : 'bg-gray-300'}`} />
               <span className="flex items-center gap-1">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                CDT Garantizado ({cdtAnnualRatePct}%)
+                CDT (Tasa Fija {cdtAnnualRatePct}%)
               </span>
             </button>
           </>

@@ -1,11 +1,13 @@
 import { useEffect } from 'react';
 import { StrategyType, Debt } from '../types';
-import { Sliders, Zap, Award, Scale, ArrowRight } from 'lucide-react';
+import { Sliders, Zap, Shield, Scale, ArrowRight } from 'lucide-react';
 import ValveSlider from './ValveSlider';
+import { formatCurrencyNumber } from '../utils';
 
 interface ValveTabProps {
   isDarkMode: boolean;
   currency: string;
+  currencyCode: string;
   income: number;
   fixedCosts: { value: number }[];
   debts: Debt[];
@@ -21,6 +23,7 @@ interface ValveTabProps {
 export default function ValveTab({
   isDarkMode,
   currency,
+  currencyCode,
   income,
   fixedCosts,
   debts,
@@ -134,7 +137,7 @@ export default function ValveTab({
         <p className={`text-sm md:text-base ${
           isDarkMode ? 'text-[#bccac0]' : 'text-[#3d4a42]'
         }`}>
-          Distribuye el excedente de dinero mensual después de cubrir tus gastos innegociables y el pago mínimo de deudas.
+          Distribuye el excedente de dinero mensual después de cubrir tus gastos innegociables (sin deudas) y el pago mínimo de deudas.
         </p>
       </div>
 
@@ -151,9 +154,9 @@ export default function ValveTab({
           <div>
             <h4 className="font-bold text-sm md:text-base font-display">Sobrante Mensual Disponible</h4>
             <p className="text-xs text-gray-400 dark:text-[#87948b] mt-0.5">
-              Calculado como: <strong className="text-emerald-500 font-sans">La Base</strong> ({currency}{income.toLocaleString()}) 
-              &minus; <strong className="text-emerald-500 font-sans">Gastos Innegociables</strong> ({currency}{totalFixedCosts.toLocaleString()})
-              &minus; <strong className="text-amber-500 font-sans">Mínimo Deudas</strong> ({currency}{totalDebtPayments.toLocaleString()})
+              Calculado como: <strong className="text-emerald-500 font-sans">La Base</strong> ({currency}{formatCurrencyNumber(income, currencyCode)}) 
+              &minus; <strong className="text-emerald-500 font-sans">Gastos Innegociables (Sin Deudas)</strong> ({currency}{formatCurrencyNumber(totalFixedCosts, currencyCode)})
+              &minus; <strong className="text-amber-500 font-sans">Mínimo Deudas</strong> ({currency}{formatCurrencyNumber(totalDebtPayments, currencyCode)})
             </p>
           </div>
         </div>
@@ -162,7 +165,7 @@ export default function ValveTab({
           <span className={`text-xl md:text-2xl font-extrabold font-display ${
             isDarkMode ? 'text-[#68dba9]' : 'text-[#006948]'
           }`}>
-            {currency}{surplus.toLocaleString('en-US', { maximumFractionDigits: 0 })}/mes
+            {currency}{formatCurrencyNumber(surplus, currencyCode)}/mes
           </span>
         </div>
       </div>
@@ -188,13 +191,14 @@ export default function ValveTab({
             </span>
           </div>
 
-          {/* Option 1: Pago Ocasional de Deudas */}
+          {/* Option 1: Aceleración de Deudas */}
           <ValveSlider
             id="valve-option-debt"
             isDarkMode={isDarkMode}
             currency={currency}
+            currencyCode={currencyCode}
             icon={<Zap className="w-5 h-5 fill-amber-500" />}
-            label="Pago Ocasional de Deudas"
+            label="Aceleración de Deudas"
             description="Para amortizar el capital de los pasivos"
             subDescription="Amortización adicional de tus pasivos para disminuir los intereses y acortar drásticamente los plazos. Al abonar a capital “matas” la raíz de los intereses."
             percentage={debtPct}
@@ -213,7 +217,8 @@ export default function ValveTab({
             id="valve-option-savings"
             isDarkMode={isDarkMode}
             currency={currency}
-            icon={<Award className="w-5 h-5" />}
+            currencyCode={currencyCode}
+            icon={<Shield className="w-5 h-5" />}
             label="Reserva de Ahorros"
             description="Para construir un fondo seguro de protección"
             subDescription="Capital líquido para blindar tu tranquilidad psicológica y aprovechar oportunidades estratégicas futuras."
@@ -231,16 +236,17 @@ export default function ValveTab({
             id="valve-option-personal"
             isDarkMode={isDarkMode}
             currency={currency}
+            currencyCode={currencyCode}
             icon={<Scale className="w-5 h-5" />}
             label="Gastos Personales"
             description="Para estilo de vida y bienestar actual"
             subDescription="Presupuesto libre sin culpas destinado a recreación, estilo de vida y consumos variables del día a día."
             percentage={personalPct}
             monthlyAmount={monthlyPersonalSpend}
-            color="#f43f5e"
-            badgeBgClass="bg-rose-500/10 text-rose-500"
-            textClass="text-rose-500"
-            btnTextClass="text-rose-400 border border-[#3d4a42]/40"
+            color="#0ea5e9"
+            badgeBgClass="bg-sky-500/10 text-sky-500"
+            textClass="text-sky-500"
+            btnTextClass="text-sky-400 border border-[#3d4a42]/40"
             onChange={(val) => handleSliderChange('personal', val)}
           />
 

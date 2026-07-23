@@ -2,12 +2,14 @@ import { Debt } from '../types';
 import { Trash2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import FormattedInput from './FormattedInput';
+import RateHint from './RateHint';
 
 interface DebtRowProps {
   key?: string;
   debt: Debt;
   index: number;
   currency: string;
+  currencyCode: string;
   isDarkMode: boolean;
   onUpdate: (id: string, field: keyof Debt, value: any) => void;
   onRemove: (id: string) => void;
@@ -17,6 +19,7 @@ export default function DebtRow({
   debt,
   index,
   currency,
+  currencyCode,
   isDarkMode,
   onUpdate,
   onRemove,
@@ -80,6 +83,7 @@ export default function DebtRow({
             </span>
             <FormattedInput
               placeholder="0.00"
+              currencyCode={currencyCode}
               className={`w-full pl-8 pr-3 py-2 rounded-lg border font-sans text-xs md:text-sm focus:outline-none focus:ring-2 transition-all ${
                 isDarkMode 
                   ? 'bg-[#0f1511] border-[#3d4a42]/40 text-[#dee4de] focus:ring-[#68dba9]' 
@@ -93,7 +97,7 @@ export default function DebtRow({
 
         <div className="flex flex-col gap-1.5">
           <label className="text-[10px] uppercase tracking-wide font-bold text-gray-400 dark:text-[#87948b]">
-            Tasa de Interés Anual <span className="normal-case font-medium text-[9px] text-gray-500 dark:text-[#728276]">(tasa mes vencido multiplicado por 12)</span>
+            Tasa de Interés Anual <RateHint />
           </label>
           <div className="relative">
             <span className={`absolute right-3 top-1/2 -translate-y-1/2 font-sans text-xs ${
@@ -128,6 +132,7 @@ export default function DebtRow({
             </span>
             <FormattedInput
               placeholder="0.00"
+              currencyCode={currencyCode}
               className={`w-full pl-8 pr-3 py-2 rounded-lg border font-sans text-xs md:text-sm focus:outline-none focus:ring-2 transition-all ${
                 isDarkMode 
                   ? 'bg-[#0f1511] border-[#3d4a42]/40 text-[#dee4de] focus:ring-[#68dba9]' 

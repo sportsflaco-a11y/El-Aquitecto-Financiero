@@ -1,8 +1,10 @@
 import { TrendingUp, ShieldCheck } from 'lucide-react';
+import { formatCurrencyNumber } from '../utils';
 
 interface WealthAccumulationCardProps {
   isDarkMode: boolean;
   currency: string;
+  currencyCode: string;
   savingsBasic: number;
   savingsCDT: number;
   cdtAnnualRatePct?: number;
@@ -11,6 +13,7 @@ interface WealthAccumulationCardProps {
 export default function WealthAccumulationCard({
   isDarkMode,
   currency,
+  currencyCode,
   savingsBasic,
   savingsCDT,
   cdtAnnualRatePct = 10,
@@ -33,7 +36,7 @@ export default function WealthAccumulationCard({
             <span className="text-[9px] text-gray-400">Rendimiento básico 2% anual</span>
           </div>
           <span className="text-sm font-extrabold font-display text-blue-500">
-            {currency}{savingsBasic.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+            {currency}{formatCurrencyNumber(savingsBasic, currencyCode)}
           </span>
         </div>
 
@@ -43,12 +46,12 @@ export default function WealthAccumulationCard({
           <div className="flex flex-col">
             <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-              CDT Garantizado
+              CDT (Tasa Fija)
             </span>
             <span className="text-[9px] text-gray-400 font-medium">Depósito Plazo Fijo {cdtAnnualRatePct}% anual</span>
           </div>
           <span className="text-base font-black font-display text-emerald-500">
-            {currency}{savingsCDT.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+            {currency}{formatCurrencyNumber(savingsCDT, currencyCode)}
           </span>
         </div>
       </div>
@@ -56,6 +59,9 @@ export default function WealthAccumulationCard({
       <div className="text-[10px] text-gray-400 dark:text-[#87948b] border-t pt-3 border-dashed border-gray-100 dark:border-[#3d4a42]/20 flex flex-col gap-1">
         <span className="leading-normal">
           * Una vez liquidada tu deuda, el 100% de lo que pagabas mensualmente se <strong>redirecciona automáticamente</strong> a multiplicar tus ahorros en tu plan de inversión.
+        </span>
+        <span className="leading-normal">
+          * La tasa fija aplica a lo que ingresaste para tu CDT — no es una garantía de rentabilidad futura.
         </span>
       </div>
     </div>

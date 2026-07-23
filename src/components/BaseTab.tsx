@@ -3,10 +3,12 @@ import { Plus, HelpCircle, Banknote, Home, ArrowRight, AlertTriangle } from 'luc
 import { motion, AnimatePresence } from 'motion/react';
 import FormattedInput from './FormattedInput';
 import FixedCostRow from './FixedCostRow';
+import { formatCurrencyNumber } from '../utils';
 
 interface BaseTabProps {
   isDarkMode: boolean;
   currency: string;
+  currencyCode: string;
   income: number;
   setIncome: (inc: number) => void;
   fixedCosts: FixedCost[];
@@ -17,6 +19,7 @@ interface BaseTabProps {
 export default function BaseTab({
   isDarkMode,
   currency,
+  currencyCode,
   income,
   setIncome,
   fixedCosts,
@@ -109,6 +112,7 @@ export default function BaseTab({
                 <FormattedInput
                   id="monthly-income-input"
                   placeholder="0.00"
+                  currencyCode={currencyCode}
                   className={`w-full pl-10 pr-4 py-3 rounded-xl border font-sans text-base md:text-lg focus:outline-none focus:ring-2 transition-all ${
                     isDarkMode 
                       ? 'bg-[#0f1511] border-[#3d4a42]/40 text-[#dee4de] focus:ring-[#68dba9]' 
@@ -140,7 +144,7 @@ export default function BaseTab({
             <div className="w-10 h-10 rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 flex items-center justify-center">
               <Home className="w-5 h-5 fill-current" />
             </div>
-            <h3 className="text-base md:text-lg font-bold">Gastos Innegociables</h3>
+            <h3 className="text-base md:text-lg font-bold">Gastos Innegociables (Sin Deudas)</h3>
           </div>
 
           <div className="flex flex-col gap-4 max-h-[28rem] overflow-y-auto pr-1" id="costs-grid-container">
@@ -151,6 +155,7 @@ export default function BaseTab({
                   cost={cost}
                   isDarkMode={isDarkMode}
                   currency={currency}
+                  currencyCode={currencyCode}
                   onUpdate={updateCostRow}
                   onRemove={removeCostRow}
                 />
@@ -198,7 +203,7 @@ export default function BaseTab({
             <div>
               <h4 className="font-bold text-sm font-display">Alerta de Gasto Elevado</h4>
               <p className="text-xs mt-1 leading-relaxed opacity-90">
-                Tus gastos innegociables representan el <span className="font-bold">{costPercentage.toFixed(1)}%</span> de tus ingresos totales. Esto supera el límite saludable recomendado del 80%, reduciendo de forma crítica tu capacidad para acumular ahorros o para amortizar deudas con rapidez. Considera optimizar tus gastos innegociables.
+                Tus gastos innegociables (sin deudas) representan el <span className="font-bold">{costPercentage.toFixed(1)}%</span> de tus ingresos totales. Esto supera el límite saludable recomendado del 80%, reduciendo de forma crítica tu capacidad para acumular ahorros o para amortizar deudas con rapidez. Considera optimizar tus gastos innegociables (sin deudas).
               </p>
             </div>
           </motion.div>
@@ -222,7 +227,7 @@ export default function BaseTab({
           </span>
           <div className="text-2xl md:text-4xl font-display font-bold flex items-baseline justify-center md:justify-start gap-1">
             <span>{currency}</span>
-            <span id="surplus-number-display">{surplus.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span id="surplus-number-display">{formatCurrencyNumber(surplus, currencyCode, 2)}</span>
           </div>
         </div>
 

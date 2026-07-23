@@ -1,9 +1,11 @@
 import React from 'react';
 import { LucideIcon } from 'lucide-react';
+import { formatCurrencyNumber } from '../utils';
 
 interface ValveSliderProps {
   isDarkMode: boolean;
   currency: string;
+  currencyCode: string;
   icon: React.ReactNode;
   label: string;
   description: string;
@@ -23,6 +25,7 @@ interface ValveSliderProps {
 export default function ValveSlider({
   isDarkMode,
   currency,
+  currencyCode,
   icon,
   label,
   description,
@@ -69,7 +72,7 @@ export default function ValveSlider({
         
         <div className="flex items-baseline gap-1 sm:text-right shrink-0">
           <span className={`text-xl md:text-2xl font-black font-display ${disabled ? 'text-gray-400 dark:text-gray-500' : textClass}`}>
-            {currency}{monthlyAmount.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+            {currency}{formatCurrencyNumber(monthlyAmount, currencyCode)}
           </span>
           <span className="text-xs text-gray-400 dark:text-[#87948b]">/mes</span>
         </div>

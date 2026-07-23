@@ -9,6 +9,7 @@ import { AppState, FixedCost, Debt, StrategyType } from './types';
 import { Database, ShieldAlert, Sliders, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useLocalStorageState } from './hooks/useLocalStorageState';
+import { getCurrencySymbol } from './utils';
 
 const LOCAL_STORAGE_KEY = 'el_arquitecto_state_v1';
 
@@ -40,19 +41,6 @@ export default function App() {
     else if (currency === '€') setCurrency('EUR');
     else if (currency === 'S/.') setCurrency('PEN');
   }, [currency, setCurrency]);
-
-  const getCurrencySymbol = (code: string) => {
-    const symbols: Record<string, string> = {
-      USD: '$',
-      EUR: '€',
-      MXN: '$',
-      COP: '$',
-      ARS: '$',
-      CLP: '$',
-      PEN: 'S/.',
-    };
-    return symbols[code] || '$';
-  };
 
   const currencySymbol = getCurrencySymbol(currency);
 
@@ -196,6 +184,7 @@ export default function App() {
                       <BaseTab
                         isDarkMode={isDarkMode}
                         currency={currencySymbol}
+                        currencyCode={currency}
                         income={income}
                         setIncome={setIncome}
                         fixedCosts={fixedCosts}
@@ -210,6 +199,7 @@ export default function App() {
                       <ScannerTab
                         isDarkMode={isDarkMode}
                         currency={currencySymbol}
+                        currencyCode={currency}
                         income={income}
                         debts={debts}
                         setDebts={setDebts}
@@ -223,6 +213,7 @@ export default function App() {
                       <ValveTab
                         isDarkMode={isDarkMode}
                         currency={currencySymbol}
+                        currencyCode={currency}
                         income={income}
                         fixedCosts={fixedCosts}
                         debts={debts}
@@ -242,6 +233,7 @@ export default function App() {
                       <ProjectionTab
                         isDarkMode={isDarkMode}
                         currency={currencySymbol}
+                        currencyCode={currency}
                         income={income}
                         fixedCosts={fixedCosts}
                         debts={debts}

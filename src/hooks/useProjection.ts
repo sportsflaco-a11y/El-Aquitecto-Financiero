@@ -222,6 +222,7 @@ export function useProjection({
       acTotalInterest: acTotalInterestPaid,
       kpis: {
         yearsSaved,
+        monthsSaved,
         totalInterestSaved,
         extraWealthCreated,
         sqDebtFreeMonth,

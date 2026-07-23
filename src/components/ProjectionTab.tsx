@@ -4,6 +4,7 @@ import { Rocket, Info, Download } from 'lucide-react';
 import { useProjection } from '../hooks/useProjection';
 import { formatMonths, downloadCSVReport } from '../utils';
 import { useLocalStorageState } from '../hooks/useLocalStorageState';
+import RateHint from './RateHint';
 import WealthChart from './WealthChart';
 import AllocationBreakdown from './AllocationBreakdown';
 import DebtPayoffCard from './DebtPayoffCard';
@@ -12,6 +13,7 @@ import WealthAccumulationCard from './WealthAccumulationCard';
 interface ProjectionTabProps {
   isDarkMode: boolean;
   currency: string;
+  currencyCode: string;
   income: number;
   fixedCosts: { value: number }[];
   debts: Debt[];
@@ -24,6 +26,7 @@ interface ProjectionTabProps {
 export default function ProjectionTab({
   isDarkMode,
   currency,
+  currencyCode,
   income,
   fixedCosts,
   debts,
@@ -34,11 +37,19 @@ export default function ProjectionTab({
 }: ProjectionTabProps) {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
-  // User defined CDT / deposit rate (%) with localStorage support
+  // User defined CDT / deposit rate (%) with localStorage support.
+  // Starts empty (0) instead of a hardcoded 10% -- that default was
+  // unrealistic for USD/EUR and reasonable only for some LatAm currencies.
+  // The placeholder below gives a rough, currency-aware reference instead.
   const [cdtAnnualRatePct, setCdtAnnualRatePct] = useLocalStorageState<number>(
     'el_arquitecto_cdt_rate_v1',
-    10
+    0
   );
+
+  const CDT_RATE_PLACEHOLDER: Record<string, string> = {
+    USD: '5.0', EUR: '3.5', MXN: '10.0', COP: '10.0', ARS: '35.0', CLP: '6.0', PEN: '6.0',
+  };
+  const cdtRatePlaceholder = CDT_RATE_PLACEHOLDER[currencyCode] || '10.0';
 
   // Core Math Engine abstracted into a custom hook
   const { monthlyData, kpis } = useProjection({
@@ -133,13 +144,14 @@ export default function ProjectionTab({
           <label className={`block text-xs font-bold uppercase tracking-wider ${isDarkMode ? 'text-[#68dba9]' : 'text-[#006948]'}`}>
             Escribe la Tasa de tu Depósito a Plazo en tu país
           </label>
+          <RateHint />
           <div className="relative rounded-xl shadow-sm">
             <input
               type="number"
               min="0"
               max="100"
               step="0.1"
-              value={cdtAnnualRatePct}
+              value={cdtAnnualRatePct === 0 ? '' : cdtAnnualRatePct}
               onChange={(e) => {
                 const val = parseFloat(e.target.value);
                 setCdtAnnualRatePct(isNaN(val) ? 0 : val);
@@ -149,12 +161,15 @@ export default function ProjectionTab({
                   ? 'bg-black border-[#3d4a42]/40 text-[#dee4de] focus:border-[#68dba9] focus:ring-[#68dba9]/20' 
                   : 'bg-white border-gray-200 text-[#171d19] focus:border-[#006948] focus:ring-[#006948]/10'
               }`}
-              placeholder="10.0"
+              placeholder={cdtRatePlaceholder}
             />
             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
               <span className={`font-black font-display text-lg ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>%</span>
             </div>
           </div>
+          <p className="text-2xs text-gray-400 dark:text-[#87948b] leading-snug">
+            Tasa fija según tu CDT — no es una garantía de rentabilidad futura.
+          </p>
         </div>
       </div>
 
@@ -177,6 +192,7 @@ export default function ProjectionTab({
             <WealthChart
               isDarkMode={isDarkMode}
               currency={currency}
+              currencyCode={currencyCode}
               monthlyData={monthlyData}
               hoverIndex={hoverIndex}
               setHoverIndex={setHoverIndex}
@@ -194,6 +210,7 @@ export default function ProjectionTab({
           <AllocationBreakdown
             isDarkMode={isDarkMode}
             currency={currency}
+            currencyCode={currencyCode}
             income={income}
             fixedCosts={fixedCosts}
             debts={debts}
@@ -212,13 +229,14 @@ export default function ProjectionTab({
             isDarkMode={isDarkMode}
             sqDebtFreeMonth={kpis.sqDebtFreeMonth}
             acDebtFreeMonth={kpis.acDebtFreeMonth}
-            yearsSaved={kpis.yearsSaved}
+            monthsSaved={kpis.monthsSaved}
           />
 
           {/* Section 2: Savings comparison (Refactored to separate component) */}
           <WealthAccumulationCard
             isDarkMode={isDarkMode}
             currency={currency}
+            currencyCode={currencyCode}
             savingsBasic={monthlyData[119]?.savingsBasic || 0}
             savingsCDT={monthlyData[119]?.savingsCDT || 0}
             cdtAnnualRatePct={cdtAnnualRatePct}

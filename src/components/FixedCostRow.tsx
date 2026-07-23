@@ -9,6 +9,7 @@ interface FixedCostRowProps {
   cost: FixedCost;
   isDarkMode: boolean;
   currency: string;
+  currencyCode: string;
   onUpdate: (id: string, field: 'name' | 'value', val: any) => void;
   onRemove: (id: string) => void;
 }
@@ -17,6 +18,7 @@ export default function FixedCostRow({
   cost,
   isDarkMode,
   currency,
+  currencyCode,
   onUpdate,
   onRemove,
 }: FixedCostRowProps) {
@@ -55,6 +57,7 @@ export default function FixedCostRow({
         </span>
         <FormattedInput
           placeholder="0.00"
+          currencyCode={currencyCode}
           className={`w-full pl-10 pr-4 py-2.5 rounded-xl border font-sans text-sm md:text-base focus:outline-none focus:ring-2 transition-all ${
             isDarkMode 
               ? 'bg-[#0f1511] border-[#3d4a42]/40 text-[#dee4de] focus:ring-[#68dba9]' 

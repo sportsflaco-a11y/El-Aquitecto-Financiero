@@ -108,9 +108,9 @@ export default function AvailabilityAnalysis({
             </h4>
             <p className="text-xs mt-1 leading-relaxed opacity-95">
               {lossOfAvailability > 5 ? (
-                'Tienes más de un 5% de pérdida de disponibilidad, es decir, más del 5% de tus ingresos están comprometidos con el pago de intereses y de deuda no indispensable. Este dinero mensual que se entrega a acreedores, es un dinero que estás dejando de ahorrar o de invertir.'
+                'Tienes más de un 5% de pérdida de disponibilidad: ese porcentaje de tus ingresos está comprometido con el pago de intereses y de deuda no indispensable. Este dinero mensual que se entrega a acreedores, es un dinero que estás dejando de ahorrar o de invertir.'
               ) : (
-                'Tienes entre un 2% y 5% de pérdida de disponibilidad, es decir, entre el 2% y el 5% de tus ingresos están comprometidos con el pago de intereses y de deuda no indispensable. Este dinero mensual que se entrega a acreedores, es un dinero que estás dejando de ahorrar o de invertir.'
+                'Tienes entre un 2% y un 5% de pérdida de disponibilidad: ese porcentaje de tus ingresos está comprometido con el pago de intereses y de deuda no indispensable. Este dinero mensual que se entrega a acreedores, es un dinero que estás dejando de ahorrar o de invertir.'
               )}
             </p>
           </div>

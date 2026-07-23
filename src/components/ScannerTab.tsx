@@ -5,10 +5,12 @@ import { AnimatePresence } from 'motion/react';
 import KPICard from './KPICard';
 import DebtRow from './DebtRow';
 import AvailabilityAnalysis from './AvailabilityAnalysis';
+import { formatCurrencyNumber } from '../utils';
 
 interface ScannerTabProps {
   isDarkMode: boolean;
   currency: string;
+  currencyCode: string;
   income: number;
   debts: Debt[];
   setDebts: (debts: Debt[]) => void;
@@ -18,6 +20,7 @@ interface ScannerTabProps {
 export default function ScannerTab({
   isDarkMode,
   currency,
+  currencyCode,
   income,
   debts,
   setDebts,
@@ -97,6 +100,7 @@ export default function ScannerTab({
                 debt={debt}
                 index={index}
                 currency={currency}
+                currencyCode={currencyCode}
                 isDarkMode={isDarkMode}
                 onUpdate={updateDebt}
                 onRemove={removeDebt}
@@ -129,7 +133,7 @@ export default function ScannerTab({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4" id="scanner-metrics-grid">
         <KPICard
           label="Deuda Total"
-          value={`${currency}${metrics.totalDebt.toLocaleString('en-US', { maximumFractionDigits: 0 })}`}
+          value={`${currency}${formatCurrencyNumber(metrics.totalDebt, currencyCode)}`}
           isDarkMode={isDarkMode}
           icon={<Coins className="w-5 h-5" />}
         />
@@ -143,7 +147,7 @@ export default function ScannerTab({
 
         <KPICard
           label="Pago Mínimo Mensual"
-          value={`${currency}${metrics.totalMinPayment.toLocaleString('en-US', { maximumFractionDigits: 0 })}`}
+          value={`${currency}${formatCurrencyNumber(metrics.totalMinPayment, currencyCode)}`}
           isDarkMode={isDarkMode}
           icon={<TrendingDown className="w-5 h-5" />}
         />
@@ -155,7 +159,7 @@ export default function ScannerTab({
               <span className="text-[10px] opacity-85 font-semibold leading-none mt-0.5">Interés Mensual</span>
             </span>
           }
-          value={`${currency}${metrics.monthlyInterestLeak.toLocaleString('en-US', { maximumFractionDigits: 2 })}`}
+          value={`${currency}${formatCurrencyNumber(metrics.monthlyInterestLeak, currencyCode, 2)}`}
           isDarkMode={isDarkMode}
           highlight={metrics.highInterestDebtsCount > 0}
           icon={metrics.highInterestDebtsCount > 0 ? <AlertTriangle className="w-5 h-5 text-amber-500 animate-pulse" /> : <Coins className="w-5 h-5" />}

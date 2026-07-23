@@ -2,10 +2,12 @@ import React from 'react';
 import { PieChart as PieIcon, Info } from 'lucide-react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { Debt } from '../types';
+import { formatCurrencyNumber } from '../utils';
 
 interface AllocationBreakdownProps {
   isDarkMode: boolean;
   currency: string;
+  currencyCode: string;
   income: number;
   fixedCosts: { value: number }[];
   debts: Debt[];
@@ -17,6 +19,7 @@ interface AllocationBreakdownProps {
 export default function AllocationBreakdown({
   isDarkMode,
   currency,
+  currencyCode,
   income,
   fixedCosts,
   debts,
@@ -59,7 +62,7 @@ export default function AllocationBreakdown({
 
   const allocationData = [
     { 
-      name: 'Gastos Innegociables', 
+      name: 'Gastos Innegociables (Sin Deudas)', 
       value: fixedCostsValue, 
       color: isDarkMode ? '#60a5fa' : '#3b82f6', 
       desc: 'Tus cimientos innegociables para el día a día.' 
@@ -77,7 +80,7 @@ export default function AllocationBreakdown({
       desc: 'Capital del excedente destinado a construir tu fondo de tranquilidad y ahorros.' 
     },
     { 
-      name: 'Pago Ocasional de Deudas', 
+      name: 'Aceleración de Deudas', 
       value: occasionalDebtValue, 
       color: isDarkMode ? '#34d399' : '#10b981', 
       desc: 'Inyección adicional de tu acelerador para liquidar tus deudas más rápido.' 
@@ -85,7 +88,7 @@ export default function AllocationBreakdown({
     { 
       name: 'Gastos Personales', 
       value: personalSpendValue, 
-      color: isDarkMode ? '#fb7185' : '#f43f5e', 
+      color: isDarkMode ? '#38bdf8' : '#0ea5e9', 
       desc: 'Porción libre del excedente para tu estilo de vida y disfrute personal.' 
     },
   ].filter(item => item.value > 0);
@@ -139,7 +142,7 @@ export default function AllocationBreakdown({
                       boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
                     }}
                     formatter={(value: any) => [
-                      `${currency}${Number(value).toLocaleString('en-US', { maximumFractionDigits: 0 })}`, 
+                      `${currency}${formatCurrencyNumber(Number(value), currencyCode)}`, 
                       'Monto'
                     ]}
                   />
@@ -170,7 +173,7 @@ export default function AllocationBreakdown({
                           {pct.toFixed(1)}%
                         </span>
                         <span className="text-xs font-black font-display text-right min-w-[60px]">
-                          {currency}{item.value.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                          {currency}{formatCurrencyNumber(item.value, currencyCode)}
                         </span>
                       </div>
                     </div>
