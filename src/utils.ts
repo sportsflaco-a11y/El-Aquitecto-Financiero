@@ -68,6 +68,7 @@ export function formatNumberInput(val: number | string | undefined, code: string
   let cleaned = val;
   const otherChar = decimal === ',' ? '.' : ',';
   const otherCharEscaped = otherChar === '.' ? '\\.' : ',';
+  const MARKER = 'DECIMAL_POINT';
 
   // Replace the "other" separator with the correct decimal char if it's
   // clearly being used as a decimal marker (e.g. typed at the end, or
@@ -79,18 +80,18 @@ export function formatNumberInput(val: number | string | undefined, code: string
   // Remove any remaining thousands separators.
   cleaned = cleaned.split(thousands).join('');
   // Mark the decimal separator temporarily so it survives the next strip.
-  cleaned = cleaned.split(decimal).join('DECIMAL_POINT');
+  cleaned = cleaned.split(decimal).join(MARKER);
   cleaned = cleaned.replace(/[^0-9DECIMAL_POINT]/g, '');
 
   // Keep only the first decimal marker.
-  const firstPointIdx = cleaned.indexOf('DECIMAL_POINT');
+  const firstPointIdx = cleaned.indexOf(MARKER);
   if (firstPointIdx !== -1) {
-    const before = cleaned.substring(0, firstPointIdx).replace(/DECIMAL_POINT/g, '');
-    const after = cleaned.substring(firstPointIdx + 1).replace(/DECIMAL_POINT/g, '');
-    cleaned = before + 'DECIMAL_POINT' + after;
+    const before = cleaned.substring(0, firstPointIdx).split(MARKER).join('');
+    const after = cleaned.substring(firstPointIdx + MARKER.length).split(MARKER).join('');
+    cleaned = before + MARKER + after;
   }
 
-  const parts = cleaned.split('DECIMAL_POINT');
+  const parts = cleaned.split(MARKER);
   let integerPart = parts[0];
   const decimalPart = parts.length > 1 ? parts[1] : null;
 
@@ -252,4 +253,3 @@ export function downloadCSVReport({
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
-
