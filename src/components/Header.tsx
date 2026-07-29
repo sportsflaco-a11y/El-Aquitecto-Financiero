@@ -1,4 +1,4 @@
-import { Compass, Sun, Moon, Database, ShieldAlert, Sliders, TrendingUp } from 'lucide-react';
+import { Compass, Sun, Moon, Database, ShieldAlert, Sliders, TrendingUp, LogOut } from 'lucide-react';
 
 interface HeaderProps {
   activeTab: 'base' | 'escaner' | 'valvula' | 'proyeccion';
@@ -7,6 +7,7 @@ interface HeaderProps {
   toggleDarkMode: () => void;
   hasStarted: boolean;
   resetApp: () => void;
+  onSignOut: () => void;
 }
 
 export default function Header({
@@ -16,6 +17,7 @@ export default function Header({
   toggleDarkMode,
   hasStarted,
   resetApp,
+  onSignOut,
 }: HeaderProps) {
   return (
     <header className={`fixed top-0 w-full z-50 px-4 md:px-8 h-16 md:h-20 flex items-center justify-between border-b transition-colors duration-300 ${
@@ -117,18 +119,33 @@ export default function Header({
         </nav>
       )}
 
-      <button
-        onClick={toggleDarkMode}
-        className={`p-2.5 rounded-full transition-transform active:scale-95 flex items-center justify-center ${
-          isDarkMode 
-            ? 'hover:bg-[#303632] text-[#68dba9]' 
-            : 'hover:bg-[#dee4de] text-[#006948]'
-        }`}
-        aria-label={isDarkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-        id="theme-toggle-btn"
-      >
-        {isDarkMode ? <Sun className="w-5 h-5 md:w-6 h-6" /> : <Moon className="w-5 h-5 md:w-6 h-6" />}
-      </button>
+      <div className="flex items-center gap-1.5 md:gap-2">
+        <button
+          onClick={toggleDarkMode}
+          className={`p-2.5 rounded-full transition-transform active:scale-95 flex items-center justify-center ${
+            isDarkMode 
+              ? 'hover:bg-[#303632] text-[#68dba9]' 
+              : 'hover:bg-[#dee4de] text-[#006948]'
+          }`}
+          aria-label={isDarkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+          id="theme-toggle-btn"
+        >
+          {isDarkMode ? <Sun className="w-5 h-5 md:w-6 h-6" /> : <Moon className="w-5 h-5 md:w-6 h-6" />}
+        </button>
+
+        <button
+          onClick={onSignOut}
+          className={`p-2.5 rounded-full transition-transform active:scale-95 flex items-center justify-center ${
+            isDarkMode 
+              ? 'hover:bg-[#303632] text-[#dee4de]' 
+              : 'hover:bg-[#dee4de] text-[#171d19]'
+          }`}
+          aria-label="Cerrar sesión"
+          id="sign-out-btn"
+        >
+          <LogOut className="w-5 h-5 md:w-6 h-6" />
+        </button>
+      </div>
     </header>
   );
 }

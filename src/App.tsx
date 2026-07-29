@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import Header from './components/Header';
 import WelcomeScreen from './components/WelcomeScreen';
+import AuthScreen from './components/AuthScreen';
 import BaseTab from './components/BaseTab';
 import ScannerTab from './components/ScannerTab';
 import ValveTab from './components/ValveTab';
 import ProjectionTab from './components/ProjectionTab';
 import { AppState, FixedCost, Debt, StrategyType } from './types';
-import { Database, ShieldAlert, Sliders, TrendingUp } from 'lucide-react';
+import { Database, ShieldAlert, Sliders, TrendingUp, Loader2, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useLocalStorageState } from './hooks/useLocalStorageState';
+import { useAuth } from './hooks/useAuth';
 import { getCurrencySymbol } from './utils';
 
 const LOCAL_STORAGE_KEY = 'el_arquitecto_state_v1';
@@ -24,6 +26,8 @@ const initialDebts: Debt[] = [
 ];
 
 export default function App() {
+  const { user, loading: authLoading, signOut } = useAuth();
+
   // Initialize state using custom hook useLocalStorageState for clean auto-sync
   const [hasStarted, setHasStarted] = useLocalStorageState<boolean>(
     `${LOCAL_STORAGE_KEY}_started`,
@@ -130,6 +134,22 @@ export default function App() {
 
   const step = getStepNumber();
 
+  // Auth gate: show a loading state while Supabase checks the session,
+  // then the login/signup screen if there's no authenticated user.
+  if (authLoading) {
+    return (
+      <div className={`min-h-screen flex items-center justify-center ${
+        isDarkMode ? 'bg-black text-[#68dba9]' : 'bg-[#f5fbf5] text-[#006948]'
+      }`}>
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthScreen isDarkMode={isDarkMode} />;
+  }
+
   return (
     <div className={`min-h-screen font-sans antialiased transition-colors duration-300 ${
       isDarkMode ? 'bg-black text-[#dee4de]' : 'bg-[#f5fbf5] text-[#171d19]'
@@ -143,6 +163,7 @@ export default function App() {
         toggleDarkMode={toggleDarkMode}
         hasStarted={hasStarted}
         resetApp={resetApp}
+        onSignOut={signOut}
       />
 
       {/* Main Container */}
