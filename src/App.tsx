@@ -6,10 +6,12 @@ import BaseTab from './components/BaseTab';
 import ScannerTab from './components/ScannerTab';
 import ValveTab from './components/ValveTab';
 import ProjectionTab from './components/ProjectionTab';
+import ChatTab from './components/ChatTab';
 import { AppState, FixedCost, Debt, StrategyType } from './types';
-import { Database, ShieldAlert, Sliders, TrendingUp, Loader2, LogOut } from 'lucide-react';
+import { Database, ShieldAlert, Sliders, TrendingUp, Loader2, LogOut, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useLocalStorageState } from './hooks/useLocalStorageState';
+import { useUserBudget } from './hooks/useUserBudget';
 import { useAuth } from './hooks/useAuth';
 import { getCurrencySymbol } from './utils';
 
@@ -48,42 +50,28 @@ export default function App() {
 
   const currencySymbol = getCurrencySymbol(currency);
 
-  const [income, setIncome] = useLocalStorageState<number>(
-    `${LOCAL_STORAGE_KEY}_income`,
-    0
-  );
+  // Datos financieros reales (ingreso, costos fijos, deudas, porcentajes de
+  // la Válvula, estrategia) ahora viven en Supabase, amarrados a la cuenta
+  // — ver src/hooks/useUserBudget.ts. Preferencias de UI se quedan locales.
+  const {
+    loading: budgetLoading,
+    income,
+    setIncome,
+    fixedCosts,
+    setFixedCosts,
+    debts,
+    setDebts,
+    debtPct,
+    setDebtPct,
+    savingsPct,
+    setSavingsPct,
+    personalPct,
+    setPersonalPct,
+    strategy,
+    setStrategy,
+  } = useUserBudget({ fixedCosts: initialFixedCosts, debts: initialDebts });
 
-  const [fixedCosts, setFixedCosts] = useLocalStorageState<FixedCost[]>(
-    `${LOCAL_STORAGE_KEY}_fixed_costs`,
-    initialFixedCosts
-  );
-
-  const [debts, setDebts] = useLocalStorageState<Debt[]>(
-    `${LOCAL_STORAGE_KEY}_debts`,
-    initialDebts
-  );
-
-  const [debtPct, setDebtPct] = useLocalStorageState<number>(
-    `${LOCAL_STORAGE_KEY}_debt_pct`,
-    40
-  );
-
-  const [savingsPct, setSavingsPct] = useLocalStorageState<number>(
-    `${LOCAL_STORAGE_KEY}_savings_pct`,
-    30
-  );
-
-  const [personalPct, setPersonalPct] = useLocalStorageState<number>(
-    `${LOCAL_STORAGE_KEY}_personal_pct`,
-    30
-  );
-
-  const [strategy, setStrategy] = useLocalStorageState<StrategyType>(
-    `${LOCAL_STORAGE_KEY}_strategy`,
-    'avalanche'
-  );
-
-  const [activeTab, setActiveTab] = useLocalStorageState<'base' | 'escaner' | 'valvula' | 'proyeccion'>(
+  const [activeTab, setActiveTab] = useLocalStorageState<'base' | 'escaner' | 'valvula' | 'proyeccion' | 'chat'>(
     `${LOCAL_STORAGE_KEY}_active_tab`,
     'base'
   );
@@ -150,6 +138,18 @@ export default function App() {
     return <AuthScreen isDarkMode={isDarkMode} />;
   }
 
+  // Espera a que el presupuesto real (Supabase) termine de cargar antes de
+  // mostrar la app — así nunca se ve un parpadeo con datos en cero.
+  if (budgetLoading) {
+    return (
+      <div className={`min-h-screen flex items-center justify-center ${
+        isDarkMode ? 'bg-black text-[#68dba9]' : 'bg-[#f5fbf5] text-[#006948]'
+      }`}>
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className={`min-h-screen font-sans antialiased transition-colors duration-300 ${
       isDarkMode ? 'bg-black text-[#dee4de]' : 'bg-[#f5fbf5] text-[#171d19]'
@@ -179,16 +179,18 @@ export default function App() {
         ) : (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-28 md:pb-8 flex flex-col gap-6 md:gap-8">
             
-            {/* Step Stepper Progress Bar */}
-            <section className="flex flex-col gap-4 max-w-xl" id="progress-indicator-section">
-              <div className="flex items-center w-full gap-2">
-                <div className={`h-1 flex-1 rounded-full ${step >= 1 ? (isDarkMode ? 'bg-[#25a475]' : 'bg-[#006948]') : 'bg-gray-200 dark:bg-[#303632]'}`} />
-                <div className={`h-1 flex-1 rounded-full ${step >= 2 ? (isDarkMode ? 'bg-[#25a475]' : 'bg-[#006948]') : 'bg-gray-200 dark:bg-[#303632]'}`} />
-                <div className={`h-1 flex-1 rounded-full ${step >= 3 ? (isDarkMode ? 'bg-[#25a475]' : 'bg-[#006948]') : 'bg-gray-200 dark:bg-[#303632]'}`} />
-                <div className={`h-1 flex-1 rounded-full ${step >= 4 ? (isDarkMode ? 'bg-[#25a475]' : 'bg-[#006948]') : 'bg-gray-200 dark:bg-[#303632]'}`} />
-                <span className="text-xs font-bold font-display ml-2">{step}/4</span>
-              </div>
-            </section>
+            {/* Step Stepper Progress Bar — el chat no es parte del setup de 4 pasos */}
+            {activeTab !== 'chat' && (
+              <section className="flex flex-col gap-4 max-w-xl" id="progress-indicator-section">
+                <div className="flex items-center w-full gap-2">
+                  <div className={`h-1 flex-1 rounded-full ${step >= 1 ? (isDarkMode ? 'bg-[#25a475]' : 'bg-[#006948]') : 'bg-gray-200 dark:bg-[#303632]'}`} />
+                  <div className={`h-1 flex-1 rounded-full ${step >= 2 ? (isDarkMode ? 'bg-[#25a475]' : 'bg-[#006948]') : 'bg-gray-200 dark:bg-[#303632]'}`} />
+                  <div className={`h-1 flex-1 rounded-full ${step >= 3 ? (isDarkMode ? 'bg-[#25a475]' : 'bg-[#006948]') : 'bg-gray-200 dark:bg-[#303632]'}`} />
+                  <div className={`h-1 flex-1 rounded-full ${step >= 4 ? (isDarkMode ? 'bg-[#25a475]' : 'bg-[#006948]') : 'bg-gray-200 dark:bg-[#303632]'}`} />
+                  <span className="text-xs font-bold font-display ml-2">{step}/4</span>
+                </div>
+              </section>
+            )}
 
             {/* Active Workspace / Form Views */}
             <div className="min-h-[60vh]" id="tab-workspace">
@@ -265,6 +267,21 @@ export default function App() {
                       />
                     </div>
                   )}
+
+                  {activeTab === 'chat' && (
+                    <div className="flex flex-col gap-6 md:gap-8">
+                      <ChatTab
+                        isDarkMode={isDarkMode}
+                        currency={currencySymbol}
+                        currencyCode={currency}
+                        income={income}
+                        fixedCosts={fixedCosts}
+                        debts={debts}
+                        personalPct={personalPct}
+                        savingsPct={savingsPct}
+                      />
+                    </div>
+                  )}
                 </motion.div>
               </AnimatePresence>
             </div>
@@ -336,6 +353,20 @@ export default function App() {
           >
             <TrendingUp className="w-5 h-5" />
             <span className="text-[10px] font-bold font-display">Tu Proyección</span>
+          </button>
+
+          {/* Chat / AI advisor tab button */}
+          <button
+            onClick={() => setActiveTab('chat')}
+            className={`flex flex-col items-center justify-center flex-1 py-1 gap-1 transition-all ${
+              activeTab === 'chat'
+                ? isDarkMode ? 'text-[#68dba9]' : 'text-[#006948]'
+                : 'text-gray-400'
+            }`}
+            id="mobile-nav-chat"
+          >
+            <Sparkles className="w-5 h-5" />
+            <span className="text-[10px] font-bold font-display">Consejero</span>
           </button>
         </nav>
       )}

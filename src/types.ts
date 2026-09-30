@@ -26,6 +26,6 @@ export interface AppState {
   personalPct: number; // 0 to 100 percentage
   strategy: StrategyType;
   savingsAllocation: number; // 0 to 100 percentage (rest goes to debt payoff)
-  activeTab: 'base' | 'escaner' | 'valvula' | 'proyeccion';
+  activeTab: 'base' | 'escaner' | 'valvula' | 'proyeccion' | 'chat';
   isDarkMode: boolean;
 }

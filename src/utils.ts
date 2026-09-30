@@ -1,6 +1,72 @@
 import { Debt, StrategyType } from './types';
 
 /**
+ * Categorías fijas para los gastos registrados por el Consejero Financiero
+ * (chat con IA). Se usan tanto en el frontend (íconos) como en el prompt del
+ * endpoint de IA, para que el modelo siempre elija una de esta lista.
+ */
+export const EXPENSE_CATEGORIES = [
+  'Comida',
+  'Mercado',
+  'Transporte',
+  'Entretenimiento',
+  'Salud',
+  'Hogar',
+  'Reparaciones',
+  'Otros',
+] as const;
+
+export type ExpenseCategory = typeof EXPENSE_CATEGORIES[number];
+
+export interface BudgetSnapshotInput {
+  income: number;
+  fixedCosts: { value: number }[];
+  debts: { minPayment: number }[];
+  personalPct: number;
+  savingsPct: number;
+  personalSpentThisMonth: number;
+}
+
+export interface BudgetSnapshot {
+  surplus: number;
+  personalTotal: number;
+  savingsTotal: number;
+  personalSpent: number;
+  personalRemaining: number;
+  overspend: number;
+  savingsReal: number;
+}
+
+/**
+ * Calcula el estado "real" de la Válvula (disponible en Gastos Personales y
+ * en Reserva de Ahorros) a partir del excedente mensual planeado y lo que el
+ * usuario ya ha gastado este mes vía el chat.
+ *
+ * Usa exactamente la misma fórmula de "Excedente Real" que ValveTab.tsx
+ * (La Base - Gastos Innegociables - Mínimo de Deudas), para que el plan
+ * mostrado en la Válvula y el seguimiento real del chat nunca se desincronicen.
+ *
+ * Si el gasto personal del mes supera lo planeado, el exceso se resta de la
+ * Reserva de Ahorros real (decisión de producto: el sobregasto sí se come el
+ * ahorro, en vez de solo mostrar una alerta sin mover números).
+ */
+export function computeBudgetSnapshot(input: BudgetSnapshotInput): BudgetSnapshot {
+  const totalFixedCosts = input.fixedCosts.reduce((sum, c) => sum + (Number(c.value) || 0), 0);
+  const totalDebtPayments = input.debts.reduce((sum, d) => sum + (Number(d.minPayment) || 0), 0);
+  const surplus = Math.max(0, input.income - totalFixedCosts - totalDebtPayments);
+
+  const personalTotal = surplus * (input.personalPct / 100);
+  const savingsTotal = surplus * (input.savingsPct / 100);
+  const personalSpent = Math.max(0, input.personalSpentThisMonth);
+
+  const overspend = Math.max(0, personalSpent - personalTotal);
+  const personalRemaining = Math.max(0, personalTotal - personalSpent);
+  const savingsReal = Math.max(0, savingsTotal - overspend);
+
+  return { surplus, personalTotal, savingsTotal, personalSpent, personalRemaining, overspend, savingsReal };
+}
+
+/**
  * Currency metadata: symbol shown in the UI for each supported currency code.
  */
 export const CURRENCY_SYMBOLS: Record<string, string> = {

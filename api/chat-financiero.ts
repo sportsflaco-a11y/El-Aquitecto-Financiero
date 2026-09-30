@@ -1,0 +1,328 @@
+import { createClient } from '@supabase/supabase-js';
+import { GoogleGenAI, Type } from '@google/genai';
+import { computeBudgetSnapshot, EXPENSE_CATEGORIES } from '../src/utils';
+import type { ExpenseCategory } from '../src/utils';
+
+/**
+ * Consejero Financiero — endpoint de chat con IA.
+ *
+ * Recibe un mensaje (texto y/o foto de un recibo) del usuario autenticado,
+ * decide si es un gasto a registrar, un consejo a dar, u otra cosa, y
+ * responde en español manteniendo la Válvula (Gastos Personales / Reserva
+ * de Ahorros) siempre sincronizada con lo que el usuario realmente gastó.
+ *
+ * Variables de entorno requeridas (Vercel → Settings → Environment Variables):
+ *   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY  (ya deberían existir por hotmart-webhook.ts)
+ *   GEMINI_API_KEY
+ */
+
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL as string,
+  process.env.SUPABASE_SERVICE_ROLE_KEY as string
+);
+
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
+
+const CANDIDATE_MODELS = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-3.5-flash'];
+
+const RESPONSE_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    intent: {
+      type: Type.STRING,
+      enum: ['log_expense', 'advice', 'other'],
+      description: 'log_expense si el usuario está contando un gasto real (texto o foto de recibo) que se debe registrar; advice si pregunta si debería comprar algo o pide consejo; other para saludos u otra cosa.',
+    },
+    amount: {
+      type: Type.NUMBER,
+      description: 'Monto del gasto detectado (en la moneda local del usuario, solo el número). 0 si no aplica.',
+    },
+    category: {
+      type: Type.STRING,
+      enum: [...EXPENSE_CATEGORIES],
+      description: 'Categoría del gasto. Otros si no aplica o no es claro.',
+    },
+    description: {
+      type: Type.STRING,
+      description: 'Descripción corta del gasto (ej. "Almuerzo", "Mercado de la semana"). Vacío si no aplica.',
+    },
+    reply: {
+      type: Type.STRING,
+      description: 'La respuesta conversacional para el usuario, en español, cálida pero directa, máximo 3-4 líneas.',
+    },
+  },
+  required: ['intent', 'reply'],
+};
+
+interface AiResult {
+  intent: 'log_expense' | 'advice' | 'other';
+  amount?: number;
+  category?: string;
+  description?: string;
+  reply: string;
+}
+
+function buildPrompt(params: {
+  message: string;
+  hasImage: boolean;
+  currency: string;
+  personalTotal: number;
+  personalRemaining: number;
+  savingsTotal: number;
+  savingsReal: number;
+  overspend: number;
+}): string {
+  const { message, hasImage, currency, personalTotal, personalRemaining, savingsTotal, savingsReal, overspend } = params;
+
+  return `
+Actúa como "El Consejero Financiero", un asesor financiero 24/7 dentro de la app "El Arquitecto Financiero". Hablas en español, de forma cercana, breve y directa (nunca más de 4 líneas). No eres un asesor financiero profesional certificado: tus consejos se basan únicamente en los números y metas que el propio usuario ya configuró en la app, y así debes darlos a entender cuando aconsejes algo importante.
+
+Estado real del usuario ESTE MES (ya calculado, es la fuente de verdad — no la recalcules, solo úsala para tu respuesta):
+- Presupuesto de Gastos Personales del mes: ${currency}${personalTotal.toFixed(0)}
+- Ya disponible (sin gastar) de Gastos Personales: ${currency}${personalRemaining.toFixed(0)}
+- Reserva de Ahorros planeada del mes: ${currency}${savingsTotal.toFixed(0)}
+- Reserva de Ahorros real (después de cualquier sobregasto ya ocurrido): ${currency}${savingsReal.toFixed(0)}
+- Sobregasto acumulado ya ocurrido este mes: ${currency}${overspend.toFixed(0)}
+
+${hasImage ? 'El usuario envió una FOTO de un recibo/factura. Léela y extrae el monto TOTAL pagado y detecta la categoría del gasto.' : ''}
+Mensaje del usuario: "${message || '(sin texto, solo la foto adjunta)'}"
+
+Reglas:
+1. Si el usuario está contando o mostrando un gasto real (texto o foto), intent = "log_expense", extrae "amount" (solo número, sin símbolos), "category" (elige la más parecida de la lista permitida) y "description" corta.
+2. Si el gasto que está contando, sumado a lo que ya gastó, SUPERA lo disponible de Gastos Personales, tu "reply" debe advertirle claramente que se excedió y que el exceso se está descontando de su Reserva de Ahorros — pero sin ser alarmista, en tono de aliado.
+3. Si el usuario pregunta si debería hacer una compra (aún no la hizo), intent = "advice": dile con los números reales si le alcanza o no, y qué pasaría con su Reserva de Ahorros si la hace. No registres nada en ese caso (no es un gasto confirmado).
+4. Si es un saludo, duda general, o algo no financiero, intent = "other" y responde brevemente y con calidez, recordándole en qué le puedes ayudar.
+5. Nunca inventes montos: si no hay un monto claro en el texto o la imagen, no pongas intent "log_expense".
+`.trim();
+}
+
+async function callGemini(prompt: string, image?: { base64: string; mimeType: string }): Promise<AiResult> {
+  const parts: any[] = [{ text: prompt }];
+  if (image) {
+    parts.push({ inlineData: { data: image.base64, mimeType: image.mimeType } });
+  }
+
+  let lastError: any = null;
+
+  for (const model of CANDIDATE_MODELS) {
+    let attempts = 3;
+    let delayMs = 1000;
+
+    while (attempts > 0) {
+      try {
+        const response = await ai.models.generateContent({
+          model,
+          contents: [{ role: 'user', parts }],
+          config: {
+            responseMimeType: 'application/json',
+            responseSchema: RESPONSE_SCHEMA as any,
+          },
+        });
+
+        const text = response.text;
+        if (text) {
+          const parsed = JSON.parse(text);
+          return {
+            intent: parsed.intent === 'log_expense' || parsed.intent === 'advice' ? parsed.intent : 'other',
+            amount: Number(parsed.amount) || 0,
+            category: parsed.category,
+            description: parsed.description,
+            reply: parsed.reply || 'Listo, ¿en qué más te ayudo?',
+          };
+        }
+      } catch (err: any) {
+        lastError = err;
+        const isRetriable =
+          err?.status === 503 || err?.status === 429 || String(err).includes('503') || String(err).includes('limit') || String(err).includes('demand');
+        if (isRetriable && attempts > 1) {
+          attempts--;
+          await new Promise((r) => setTimeout(r, delayMs));
+          delayMs *= 2;
+          continue;
+        }
+        break;
+      }
+    }
+  }
+
+  throw lastError || new Error('No se pudo obtener respuesta de los modelos de IA.');
+}
+
+export default async function handler(req: any, res: any) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(500).json({ error: 'GEMINI_API_KEY no está configurada en el servidor.' });
+  }
+
+  // 1. Autenticar al usuario a partir del token de sesión de Supabase.
+  const authHeader = req.headers['authorization'] || req.headers['Authorization'];
+  const token = typeof authHeader === 'string' ? authHeader.replace(/^Bearer\s+/i, '') : null;
+  if (!token) {
+    return res.status(401).json({ error: 'Falta el token de sesión.' });
+  }
+
+  const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
+  if (userError || !userData?.user) {
+    return res.status(401).json({ error: 'Sesión inválida o expirada.' });
+  }
+  const userId = userData.user.id;
+
+  const body = req.body || {};
+  const message: string = typeof body.message === 'string' ? body.message : '';
+  const imageBase64: string | undefined = typeof body.imageBase64 === 'string' ? body.imageBase64 : undefined;
+  const imageMimeType: string | undefined = typeof body.imageMimeType === 'string' ? body.imageMimeType : undefined;
+
+  if (!message.trim() && !imageBase64) {
+    return res.status(400).json({ error: 'Mensaje vacío.' });
+  }
+
+  try {
+    // 2. Cargar el presupuesto real del usuario y lo que ya gastó este mes.
+    const { data: budgetRow, error: budgetError } = await supabaseAdmin
+      .from('user_budgets')
+      .select('income, fixed_costs, debts, personal_pct, savings_pct')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (budgetError) {
+      console.error('Error leyendo user_budgets:', budgetError);
+      return res.status(500).json({ error: 'Error leyendo tu presupuesto.' });
+    }
+    if (!budgetRow) {
+      return res.status(400).json({ error: 'Primero completa La Base, El Escáner y La Válvula antes de usar el Consejero.' });
+    }
+
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const { data: monthExpenses, error: expensesError } = await supabaseAdmin
+      .from('expenses')
+      .select('amount')
+      .eq('user_id', userId)
+      .gte('created_at', startOfMonth.toISOString());
+
+    if (expensesError) {
+      console.error('Error leyendo expenses:', expensesError);
+      return res.status(500).json({ error: 'Error leyendo tus gastos de este mes.' });
+    }
+
+    const spentBefore = (monthExpenses || []).reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
+    const snapshotBefore = computeBudgetSnapshot({
+      income: Number(budgetRow.income) || 0,
+      fixedCosts: (budgetRow.fixed_costs as { value: number }[]) || [],
+      debts: (budgetRow.debts as { minPayment: number }[]) || [],
+      personalPct: budgetRow.personal_pct ?? 30,
+      savingsPct: budgetRow.savings_pct ?? 30,
+      personalSpentThisMonth: spentBefore,
+    });
+
+    // 3. Preguntarle a Gemini qué es esto: ¿un gasto a registrar, un consejo, u otra cosa?
+    const prompt = buildPrompt({
+      message,
+      hasImage: !!imageBase64,
+      currency: '',
+      personalTotal: snapshotBefore.personalTotal,
+      personalRemaining: snapshotBefore.personalRemaining,
+      savingsTotal: snapshotBefore.savingsTotal,
+      savingsReal: snapshotBefore.savingsReal,
+      overspend: snapshotBefore.overspend,
+    });
+
+    const ai_result = await callGemini(
+      prompt,
+      imageBase64 && imageMimeType ? { base64: imageBase64, mimeType: imageMimeType } : undefined
+    );
+
+    // 4. Si es un gasto real con monto válido, registrarlo y recalcular la Válvula.
+    let kind: 'text' | 'expense_card' | 'warning' = 'text';
+    let card: { category: string; amount: string; note: string } | undefined;
+    let snapshotAfter = snapshotBefore;
+    let expenseId: string | null = null;
+
+    const isConfidentExpense = ai_result.intent === 'log_expense' && (ai_result.amount || 0) > 0;
+
+    if (isConfidentExpense) {
+      const category: ExpenseCategory = (EXPENSE_CATEGORIES as readonly string[]).includes(ai_result.category || '')
+        ? (ai_result.category as ExpenseCategory)
+        : 'Otros';
+
+      const { data: inserted, error: insertError } = await supabaseAdmin
+        .from('expenses')
+        .insert({
+          user_id: userId,
+          amount: ai_result.amount,
+          currency: null,
+          category,
+          description: ai_result.description || null,
+          source: 'chat',
+        })
+        .select('id')
+        .single();
+
+      if (insertError) {
+        console.error('Error guardando el gasto:', insertError);
+      } else {
+        expenseId = inserted?.id ?? null;
+      }
+
+      snapshotAfter = computeBudgetSnapshot({
+        income: Number(budgetRow.income) || 0,
+        fixedCosts: (budgetRow.fixed_costs as { value: number }[]) || [],
+        debts: (budgetRow.debts as { minPayment: number }[]) || [],
+        personalPct: budgetRow.personal_pct ?? 30,
+        savingsPct: budgetRow.savings_pct ?? 30,
+        personalSpentThisMonth: spentBefore + (ai_result.amount || 0),
+      });
+
+      kind = snapshotAfter.overspend > 0 ? 'warning' : 'expense_card';
+      card = {
+        category,
+        amount: String(ai_result.amount),
+        note: ai_result.description || category,
+      };
+    } else if (snapshotBefore.overspend > 0 && ai_result.intent === 'advice') {
+      // Ya venía con sobregasto y está pidiendo consejo: mantener el tono de alerta.
+      kind = 'warning';
+    }
+
+    // 5. Persistir ambos turnos del chat (para que el historial sobreviva recargas/dispositivos).
+    const nowIso = new Date().toISOString();
+    await supabaseAdmin.from('chat_messages').insert([
+      {
+        user_id: userId,
+        role: 'user',
+        content: message || (imageBase64 ? '[Foto de recibo]' : ''),
+        kind: 'text',
+        meta: null,
+        expense_id: null,
+        created_at: nowIso,
+      },
+      {
+        user_id: userId,
+        role: 'assistant',
+        content: ai_result.reply,
+        kind,
+        meta: card ? { card } : null,
+        expense_id: expenseId,
+        created_at: nowIso,
+      },
+    ]);
+
+    return res.status(200).json({
+      reply: ai_result.reply,
+      kind,
+      card,
+      snapshot: snapshotAfter,
+    });
+  } catch (err: any) {
+    console.error('Error en el Consejero Financiero:', err);
+    return res.status(500).json({ error: 'No se pudo procesar tu mensaje. Intenta de nuevo en unos segundos.' });
+  }
+}

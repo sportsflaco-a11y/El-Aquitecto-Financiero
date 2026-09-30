@@ -1,8 +1,8 @@
-import { Compass, Sun, Moon, Database, ShieldAlert, Sliders, TrendingUp, LogOut } from 'lucide-react';
+import { Compass, Sun, Moon, Database, ShieldAlert, Sliders, TrendingUp, LogOut, Sparkles } from 'lucide-react';
 
 interface HeaderProps {
-  activeTab: 'base' | 'escaner' | 'valvula' | 'proyeccion';
-  setActiveTab: (tab: 'base' | 'escaner' | 'valvula' | 'proyeccion') => void;
+  activeTab: 'base' | 'escaner' | 'valvula' | 'proyeccion' | 'chat';
+  setActiveTab: (tab: 'base' | 'escaner' | 'valvula' | 'proyeccion' | 'chat') => void;
   isDarkMode: boolean;
   toggleDarkMode: () => void;
   hasStarted: boolean;
@@ -115,6 +115,23 @@ export default function Header({
           >
             <TrendingUp className="w-4 h-4" />
             Tu Proyección
+          </button>
+
+          <button
+            onClick={() => setActiveTab('chat')}
+            className={`px-4 py-2 rounded-full font-display text-sm font-semibold flex items-center gap-2 transition-all ${
+              activeTab === 'chat'
+                ? isDarkMode
+                  ? 'bg-[#25a475] text-[#00311f]'
+                  : 'bg-[#006948] text-white'
+                : isDarkMode
+                  ? 'text-[#bccac0] hover:bg-[#303632]'
+                  : 'text-[#3d4a42] hover:bg-[#dee4de]'
+            }`}
+            id="nav-tab-chat"
+          >
+            <Sparkles className="w-4 h-4" />
+            Consejero
           </button>
         </nav>
       )}
