@@ -1,7 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 import { GoogleGenAI, Type } from '@google/genai';
-import { computeBudgetSnapshot, EXPENSE_CATEGORIES } from '../src/utils';
-import type { ExpenseCategory } from '../src/utils';
 
 /**
  * Consejero Financiero — endpoint de chat con IA.
@@ -14,7 +12,63 @@ import type { ExpenseCategory } from '../src/utils';
  * Variables de entorno requeridas (Vercel → Settings → Environment Variables):
  *   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY  (ya deberían existir por hotmart-webhook.ts)
  *   GEMINI_API_KEY
+ *
+ * NOTA: este archivo es intencionalmente autocontenido (no importa nada de
+ * ../src/) porque Vercel despliega cada función de /api/ por separado bajo
+ * ESM estricto, y una importación relativa a una carpeta fuera de /api/
+ * falla en producción con ERR_MODULE_NOT_FOUND aunque funcione localmente.
+ * EXPENSE_CATEGORIES y computeBudgetSnapshot están duplicados aquí a
+ * propósito — son copia exacta de src/utils.ts. Si cambias la fórmula de la
+ * Válvula ahí, cámbiala también aquí.
  */
+
+const EXPENSE_CATEGORIES = [
+  'Comida',
+  'Mercado',
+  'Transporte',
+  'Entretenimiento',
+  'Salud',
+  'Hogar',
+  'Reparaciones',
+  'Otros',
+] as const;
+
+type ExpenseCategory = typeof EXPENSE_CATEGORIES[number];
+
+interface BudgetSnapshotInput {
+  income: number;
+  fixedCosts: { value: number }[];
+  debts: { minPayment: number }[];
+  personalPct: number;
+  savingsPct: number;
+  personalSpentThisMonth: number;
+}
+
+interface BudgetSnapshot {
+  surplus: number;
+  personalTotal: number;
+  savingsTotal: number;
+  personalSpent: number;
+  personalRemaining: number;
+  overspend: number;
+  savingsReal: number;
+}
+
+function computeBudgetSnapshot(input: BudgetSnapshotInput): BudgetSnapshot {
+  const totalFixedCosts = input.fixedCosts.reduce((sum, c) => sum + (Number(c.value) || 0), 0);
+  const totalDebtPayments = input.debts.reduce((sum, d) => sum + (Number(d.minPayment) || 0), 0);
+  const surplus = Math.max(0, input.income - totalFixedCosts - totalDebtPayments);
+
+  const personalTotal = surplus * (input.personalPct / 100);
+  const savingsTotal = surplus * (input.savingsPct / 100);
+  const personalSpent = Math.max(0, input.personalSpentThisMonth);
+
+  const overspend = Math.max(0, personalSpent - personalTotal);
+  const personalRemaining = Math.max(0, personalTotal - personalSpent);
+  const savingsReal = Math.max(0, savingsTotal - overspend);
+
+  return { surplus, personalTotal, savingsTotal, personalSpent, personalRemaining, overspend, savingsReal };
+}
 
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL as string,
