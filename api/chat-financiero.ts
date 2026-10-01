@@ -104,7 +104,7 @@ const RESPONSE_SCHEMA = {
     },
     reply: {
       type: Type.STRING,
-      description: 'La respuesta conversacional para el usuario, en español, cálida pero directa, máximo 3-4 líneas.',
+      description: 'La respuesta conversacional para el usuario, en español, cálida pero directa. Máximo 3-4 líneas para gastos del día a día; hasta 5-6 líneas si es una decisión grande de deuda/crédito que requiere explicar números.',
     },
   },
   required: ['intent', 'reply'],
@@ -127,13 +127,36 @@ function buildPrompt(params: {
   savingsTotal: number;
   savingsReal: number;
   overspend: number;
+  income: number;
+  totalFixedCosts: number;
+  totalDebtPayments: number;
+  surplus: number;
+  debtPct: number;
+  strategy: string;
+  monthlyExtraDebtPayoff: number;
+  debtsList: string;
 }): string {
-  const { message, hasImage, currency, personalTotal, personalRemaining, savingsTotal, savingsReal, overspend } = params;
+  const {
+    message, hasImage, currency, personalTotal, personalRemaining, savingsTotal, savingsReal, overspend,
+    income, totalFixedCosts, totalDebtPayments, surplus, debtPct, strategy, monthlyExtraDebtPayoff, debtsList,
+  } = params;
 
   return `
-Actúa como "El Consejero Financiero", un asesor financiero 24/7 dentro de la app "El Arquitecto Financiero". Hablas en español, de forma cercana, breve y directa (nunca más de 4 líneas). No eres un asesor financiero profesional certificado: tus consejos se basan únicamente en los números y metas que el propio usuario ya configuró en la app, y así debes darlos a entender cuando aconsejes algo importante.
+Actúa como "El Consejero Financiero", un asesor financiero 24/7 dentro de la app "El Arquitecto Financiero". Hablas en español, de forma cercana, breve y directa. No eres un asesor financiero profesional certificado: tus consejos se basan únicamente en los números y metas que el propio usuario ya configuró en la app, y así debes darlos a entender cuando aconsejes algo importante (especialmente decisiones grandes de deuda).
 
 Estado real del usuario ESTE MES (ya calculado, es la fuente de verdad — no la recalcules, solo úsala para tu respuesta):
+
+Panorama completo (La Base / El Escáner / La Válvula):
+- Ingreso mensual neto: ${currency}${income.toFixed(0)}
+- Gastos innegociables (sin deudas): ${currency}${totalFixedCosts.toFixed(0)}
+- Pago mínimo total de deudas actuales: ${currency}${totalDebtPayments.toFixed(0)}
+- Excedente mensual real (lo que sobra después de gastos innegociables y mínimos de deuda): ${currency}${surplus.toFixed(0)}
+- Estrategia de pago de deuda activa: ${strategy === 'snowball' ? 'Bola de Nieve (paga primero el saldo más pequeño)' : strategy === 'balanced' ? 'Balanceada' : 'Avalancha (paga primero la tasa de interés más alta)'}
+- Del excedente, ${debtPct}% (${currency}${monthlyExtraDebtPayoff.toFixed(0)}/mes) se destina a pago EXTRA de deudas (acelerador)
+- Deudas actuales registradas en El Escáner:
+${debtsList || '  (el usuario no tiene deudas registradas actualmente)'}
+
+Específico de este mes (Válvula):
 - Presupuesto de Gastos Personales del mes: ${currency}${personalTotal.toFixed(0)}
 - Ya disponible (sin gastar) de Gastos Personales: ${currency}${personalRemaining.toFixed(0)}
 - Reserva de Ahorros planeada del mes: ${currency}${savingsTotal.toFixed(0)}
@@ -144,11 +167,12 @@ ${hasImage ? 'El usuario envió una FOTO de un recibo/factura. Léela y extrae e
 Mensaje del usuario: "${message || '(sin texto, solo la foto adjunta)'}"
 
 Reglas:
-1. Si el usuario está contando o mostrando un gasto real (texto o foto), intent = "log_expense", extrae "amount" (solo número, sin símbolos), "category" (elige la más parecida de la lista permitida) y "description" corta.
+1. Si el usuario está contando o mostrando un gasto real ya hecho (texto o foto) — algo del día a día tipo comida, transporte, compras — intent = "log_expense", extrae "amount" (solo número, sin símbolos), "category" (elige la más parecida de la lista permitida) y "description" corta. Esto es SOLO para gastos personales del día a día, nunca para una deuda o crédito nuevo (esos no se registran automáticamente, solo se aconsejan).
 2. Si el gasto que está contando, sumado a lo que ya gastó, SUPERA lo disponible de Gastos Personales, tu "reply" debe advertirle claramente que se excedió y que el exceso se está descontando de su Reserva de Ahorros — pero sin ser alarmista, en tono de aliado.
-3. Si el usuario pregunta si debería hacer una compra (aún no la hizo), intent = "advice": dile con los números reales si le alcanza o no, y qué pasaría con su Reserva de Ahorros si la hace. No registres nada en ese caso (no es un gasto confirmado).
-4. Si es un saludo, duda general, o algo no financiero, intent = "other" y responde brevemente y con calidez, recordándole en qué le puedes ayudar.
-5. Nunca inventes montos: si no hay un monto claro en el texto o la imagen, no pongas intent "log_expense".
+3. Si el usuario pregunta si debería hacer una compra puntual (aún no la hizo) con su dinero del día a día, intent = "advice": dile con los números reales si le alcanza o no de su Gastos Personales, y qué pasaría con su Reserva de Ahorros si la hace.
+4. Si el usuario pregunta por una decisión financiera grande — un crédito, préstamo, deuda nueva (carro, casa, tarjeta, etc.) — intent = "advice" también, pero en este caso usa el PANORAMA COMPLETO (ingreso, excedente, deudas actuales y su interés, estrategia de pago) para darle un consejo calculado: explícale cómo esa nueva cuota afectaría su excedente mensual, si le conviene más pagar primero sus deudas actuales (sobre todo si tienen interés más alto que la nueva), y qué le quedaría disponible después. Puedes usar hasta 5-6 líneas para este tipo de respuesta si hace falta explicarlo bien. No registres nada en El Escáner ni en gastos — solo da el consejo en texto.
+5. Si es un saludo, duda general, o algo no financiero, intent = "other" y responde brevemente y con calidez, recordándole en qué le puedes ayudar.
+6. Nunca inventes montos: si no hay un monto claro en el texto o la imagen para un gasto del día a día, no pongas intent "log_expense".
 `.trim();
 }
 
@@ -239,7 +263,7 @@ export default async function handler(req: any, res: any) {
     // 2. Cargar el presupuesto real del usuario y lo que ya gastó este mes.
     const { data: budgetRow, error: budgetError } = await supabaseAdmin
       .from('user_budgets')
-      .select('income, fixed_costs, debts, personal_pct, savings_pct')
+      .select('income, fixed_costs, debts, personal_pct, savings_pct, debt_pct, strategy')
       .eq('user_id', userId)
       .maybeSingle();
 
@@ -268,14 +292,27 @@ export default async function handler(req: any, res: any) {
 
     const spentBefore = (monthExpenses || []).reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
 
+    const income = Number(budgetRow.income) || 0;
+    const fixedCosts = (budgetRow.fixed_costs as { name?: string; value: number }[]) || [];
+    const debts = (budgetRow.debts as { name?: string; balance: number; interestRate: number; minPayment: number }[]) || [];
+    const debtPct = budgetRow.debt_pct ?? 40;
+    const strategy = (budgetRow.strategy as string) || 'avalanche';
+
     const snapshotBefore = computeBudgetSnapshot({
-      income: Number(budgetRow.income) || 0,
-      fixedCosts: (budgetRow.fixed_costs as { value: number }[]) || [],
-      debts: (budgetRow.debts as { minPayment: number }[]) || [],
+      income,
+      fixedCosts,
+      debts,
       personalPct: budgetRow.personal_pct ?? 30,
       savingsPct: budgetRow.savings_pct ?? 30,
       personalSpentThisMonth: spentBefore,
     });
+
+    const totalFixedCosts = fixedCosts.reduce((sum, c) => sum + (Number(c.value) || 0), 0);
+    const totalDebtPayments = debts.reduce((sum, d) => sum + (Number(d.minPayment) || 0), 0);
+    const monthlyExtraDebtPayoff = snapshotBefore.surplus * (debtPct / 100);
+    const debtsList = debts
+      .map((d) => `  - ${d.name || 'Deuda'}: saldo $${(Number(d.balance) || 0).toFixed(0)}, interés anual ${Number(d.interestRate) || 0}%, pago mínimo $${(Number(d.minPayment) || 0).toFixed(0)}/mes`)
+      .join('\n');
 
     // 3. Preguntarle a Gemini qué es esto: ¿un gasto a registrar, un consejo, u otra cosa?
     const prompt = buildPrompt({
@@ -287,6 +324,14 @@ export default async function handler(req: any, res: any) {
       savingsTotal: snapshotBefore.savingsTotal,
       savingsReal: snapshotBefore.savingsReal,
       overspend: snapshotBefore.overspend,
+      income,
+      totalFixedCosts,
+      totalDebtPayments,
+      surplus: snapshotBefore.surplus,
+      debtPct,
+      strategy,
+      monthlyExtraDebtPayoff,
+      debtsList,
     });
 
     const ai_result = await callGemini(
@@ -327,9 +372,9 @@ export default async function handler(req: any, res: any) {
       }
 
       snapshotAfter = computeBudgetSnapshot({
-        income: Number(budgetRow.income) || 0,
-        fixedCosts: (budgetRow.fixed_costs as { value: number }[]) || [],
-        debts: (budgetRow.debts as { minPayment: number }[]) || [],
+        income,
+        fixedCosts,
+        debts,
         personalPct: budgetRow.personal_pct ?? 30,
         savingsPct: budgetRow.savings_pct ?? 30,
         personalSpentThisMonth: spentBefore + (ai_result.amount || 0),
