@@ -14,6 +14,7 @@ import {
   Wrench,
   CircleDollarSign,
   Undo2,
+  Eraser,
 } from 'lucide-react';
 import { Debt, FixedCost } from '../types';
 import { supabase } from '../lib/supabaseClient';
@@ -270,6 +271,20 @@ export default function ChatTab({
     }
   }
 
+  /** "Limpia" la vista del chat SOLO en la pantalla actual: no borra nada
+   * en Supabase (ni los gastos ni los mensajes guardados). Si recargas la
+   * página, el historial completo vuelve a aparecer, porque esta función
+   * nunca toca la base de datos — solo vacía el estado local de React. */
+  function handleClearChat() {
+    if (sending || undoing) return;
+    const confirmado = window.confirm(
+      'Esto solo limpia lo que ves en la pantalla. Tus gastos y tu historial real no se borran, y volverán a aparecer si recargas la página. ¿Quieres limpiar la vista ahora?'
+    );
+    if (!confirmado) return;
+    setErrorMsg(null);
+    setMessages([]);
+  }
+
   /** Borra el gasto más reciente de este mes (por si te equivocaste al
    * contárselo al Consejero). No reinicia el mes completo — eso ya pasa
    * solo cuando cambia el calendario. */
@@ -329,7 +344,10 @@ export default function ChatTab({
           Consejero Financiero
         </h2>
         <p className={`text-sm md:text-base ${isDarkMode ? 'text-[#bccac0]' : 'text-[#3d4a42]'}`}>
-          Cuéntale lo que gastas o manda la foto de un recibo. Te avisa si te estás pasando del plan.
+          Cuéntale lo que gastas o manda la foto de un recibo. Te avisa si te estás pasando del plan.{' '}
+          <span className={isDarkMode ? 'text-[#87948b]' : 'text-gray-400'}>
+            (Los gastos adicionales y los Gastos Personales disponibles se reinician automáticamente cada mes)
+          </span>
         </p>
       </div>
 
@@ -375,6 +393,22 @@ export default function ChatTab({
             <div className="h-full rounded-full bg-indigo-500 transition-all duration-500" style={{ width: `${savingsPct100}%` }} />
           </div>
         </div>
+      </div>
+
+      {/* Botón para limpiar la vista del chat (no borra nada guardado) */}
+      <div className="flex justify-end -mb-2">
+        <button
+          type="button"
+          onClick={handleClearChat}
+          disabled={sending || undoing || historyLoading}
+          className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full transition-colors disabled:opacity-40 ${
+            isDarkMode ? 'text-[#87948b] hover:text-[#dee4de] hover:bg-[#1b211d]' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
+          }`}
+          id="clear-chat-view-btn"
+        >
+          <Eraser className="w-3.5 h-3.5" />
+          Limpiar chat
+        </button>
       </div>
 
       {/* Messages */}
