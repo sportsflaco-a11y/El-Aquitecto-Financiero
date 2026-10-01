@@ -383,12 +383,16 @@ export default async function handler(req: any, res: any) {
         ? (ai_result.category as ExpenseCategory)
         : 'Otros';
 
+      // NOTA: no se manda `currency` aquí a propósito — la columna es
+      // `not null default 'USD'` en Supabase, y mandar `currency: null`
+      // explícitamente (como hacía esta versión antes) hacía que el insert
+      // fallara SIEMPRE por violar esa restricción. Al omitir el campo, la
+      // base de datos aplica su valor por defecto y el insert sí funciona.
       const { data: inserted, error: insertError } = await supabaseAdmin
         .from('expenses')
         .insert({
           user_id: userId,
           amount: ai_result.amount,
-          currency: null,
           category,
           description: ai_result.description || null,
           source: 'chat',
@@ -397,26 +401,31 @@ export default async function handler(req: any, res: any) {
         .single();
 
       if (insertError) {
+        // Si el gasto no se pudo guardar de verdad, NO le decimos al usuario
+        // que sí quedó registrado — eso fue justo el bug anterior (la barra
+        // bajaba un instante y luego "se revertía" al recargar, porque el
+        // gasto nunca existió realmente en la base de datos).
         console.error('Error guardando el gasto:', insertError);
+        ai_result.reply = 'Entendí el gasto, pero no pude guardarlo ahora mismo. ¿Puedes intentar contármelo de nuevo en un momento?';
       } else {
         expenseId = inserted?.id ?? null;
+
+        snapshotAfter = computeBudgetSnapshot({
+          income,
+          fixedCosts,
+          debts,
+          personalPct: budgetRow.personal_pct ?? 30,
+          savingsPct: budgetRow.savings_pct ?? 30,
+          personalSpentThisMonth: spentBefore + (ai_result.amount || 0),
+        });
+
+        kind = snapshotAfter.overspend > 0 ? 'warning' : 'expense_card';
+        card = {
+          category,
+          amount: String(ai_result.amount),
+          note: ai_result.description || category,
+        };
       }
-
-      snapshotAfter = computeBudgetSnapshot({
-        income,
-        fixedCosts,
-        debts,
-        personalPct: budgetRow.personal_pct ?? 30,
-        savingsPct: budgetRow.savings_pct ?? 30,
-        personalSpentThisMonth: spentBefore + (ai_result.amount || 0),
-      });
-
-      kind = snapshotAfter.overspend > 0 ? 'warning' : 'expense_card';
-      card = {
-        category,
-        amount: String(ai_result.amount),
-        note: ai_result.description || category,
-      };
     } else if (snapshotBefore.overspend > 0 && ai_result.intent === 'advice') {
       // Ya venía con sobregasto y está pidiendo consejo: mantener el tono de alerta.
       kind = 'warning';

@@ -13,6 +13,7 @@ import {
   Home as HomeIcon,
   Wrench,
   CircleDollarSign,
+  Undo2,
 } from 'lucide-react';
 import { Debt, FixedCost } from '../types';
 import { supabase } from '../lib/supabaseClient';
@@ -111,6 +112,7 @@ export default function ChatTab({
   const [historyLoading, setHistoryLoading] = useState(true);
   const [snapshot, setSnapshot] = useState<BudgetSnapshot | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [undoing, setUndoing] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -268,6 +270,46 @@ export default function ChatTab({
     }
   }
 
+  /** Borra el gasto más reciente de este mes (por si te equivocaste al
+   * contárselo al Consejero). No reinicia el mes completo — eso ya pasa
+   * solo cuando cambia el calendario. */
+  async function handleUndoLastExpense() {
+    if (undoing || sending) return;
+    setErrorMsg(null);
+    setUndoing(true);
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error('Sesión no disponible');
+
+      const res = await fetch('/api/undo-last-expense', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const body = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setErrorMsg(body?.error || 'No pude deshacer el último gasto.');
+        return;
+      }
+
+      if (body.snapshot) setSnapshot(body.snapshot);
+      if (body.note) {
+        setMessages((prev) => [
+          ...prev,
+          { id: `local-${Date.now()}-undo`, role: 'assistant', kind: 'text', text: body.note },
+        ]);
+      }
+    } catch (err: any) {
+      console.error('Error deshaciendo el último gasto:', err);
+      setErrorMsg('No pude deshacer el último gasto. Intenta de nuevo.');
+    } finally {
+      setUndoing(false);
+    }
+  }
+
   const personalPct100 = snapshot && snapshot.personalTotal > 0
     ? Math.max(0, Math.min(100, Math.round((snapshot.personalRemaining / snapshot.personalTotal) * 100)))
     : 100;
@@ -295,6 +337,20 @@ export default function ChatTab({
       <div className={`p-5 rounded-2xl border flex flex-col gap-4 ${
         isDarkMode ? 'bg-[#0f1511] border-[#3d4a42]/30' : 'bg-emerald-50/40 border-emerald-100'
       }`}>
+        <div className="flex justify-end -mb-1">
+          <button
+            type="button"
+            onClick={handleUndoLastExpense}
+            disabled={undoing || sending || historyLoading}
+            className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full transition-colors disabled:opacity-40 ${
+              isDarkMode ? 'text-[#87948b] hover:text-[#dee4de] hover:bg-[#1b211d]' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
+            }`}
+            id="undo-last-expense-btn"
+          >
+            {undoing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Undo2 className="w-3.5 h-3.5" />}
+            Deshacer último gasto
+          </button>
+        </div>
         <div className="flex flex-col gap-1.5">
           <div className="flex justify-between items-baseline">
             <span className={`text-xs font-semibold ${isDarkMode ? 'text-[#87948b]' : 'text-[#556] '}`}>Gastos Personales disponibles</span>
