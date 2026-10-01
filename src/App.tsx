@@ -109,13 +109,14 @@ export default function App() {
   // Calculations for sub-navigation support
   const totalCosts = fixedCosts.reduce((sum, cost) => sum + (Number(cost.value) || 0), 0);
 
-  // Determine current step index out of 4
+  // Determine current step index out of 5 (incluye el Consejero como 5to paso)
   const getStepNumber = () => {
     switch (activeTab) {
       case 'base': return 1;
       case 'escaner': return 2;
       case 'valvula': return 3;
       case 'proyeccion': return 4;
+      case 'chat': return 5;
       default: return 1;
     }
   };
@@ -179,18 +180,17 @@ export default function App() {
         ) : (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-28 md:pb-8 flex flex-col gap-6 md:gap-8">
             
-            {/* Step Stepper Progress Bar — el chat no es parte del setup de 4 pasos */}
-            {activeTab !== 'chat' && (
-              <section className="flex flex-col gap-4 max-w-xl" id="progress-indicator-section">
-                <div className="flex items-center w-full gap-2">
-                  <div className={`h-1 flex-1 rounded-full ${step >= 1 ? (isDarkMode ? 'bg-[#25a475]' : 'bg-[#006948]') : 'bg-gray-200 dark:bg-[#303632]'}`} />
-                  <div className={`h-1 flex-1 rounded-full ${step >= 2 ? (isDarkMode ? 'bg-[#25a475]' : 'bg-[#006948]') : 'bg-gray-200 dark:bg-[#303632]'}`} />
-                  <div className={`h-1 flex-1 rounded-full ${step >= 3 ? (isDarkMode ? 'bg-[#25a475]' : 'bg-[#006948]') : 'bg-gray-200 dark:bg-[#303632]'}`} />
-                  <div className={`h-1 flex-1 rounded-full ${step >= 4 ? (isDarkMode ? 'bg-[#25a475]' : 'bg-[#006948]') : 'bg-gray-200 dark:bg-[#303632]'}`} />
-                  <span className="text-xs font-bold font-display ml-2">{step}/4</span>
-                </div>
-              </section>
-            )}
+            {/* Step Stepper Progress Bar — ahora incluye el Consejero como 5to paso */}
+            <section className="flex flex-col gap-4 max-w-xl" id="progress-indicator-section">
+              <div className="flex items-center w-full gap-2">
+                <div className={`h-1 flex-1 rounded-full ${step >= 1 ? (isDarkMode ? 'bg-[#25a475]' : 'bg-[#006948]') : 'bg-gray-200 dark:bg-[#303632]'}`} />
+                <div className={`h-1 flex-1 rounded-full ${step >= 2 ? (isDarkMode ? 'bg-[#25a475]' : 'bg-[#006948]') : 'bg-gray-200 dark:bg-[#303632]'}`} />
+                <div className={`h-1 flex-1 rounded-full ${step >= 3 ? (isDarkMode ? 'bg-[#25a475]' : 'bg-[#006948]') : 'bg-gray-200 dark:bg-[#303632]'}`} />
+                <div className={`h-1 flex-1 rounded-full ${step >= 4 ? (isDarkMode ? 'bg-[#25a475]' : 'bg-[#006948]') : 'bg-gray-200 dark:bg-[#303632]'}`} />
+                <div className={`h-1 flex-1 rounded-full ${step >= 5 ? (isDarkMode ? 'bg-[#25a475]' : 'bg-[#006948]') : 'bg-gray-200 dark:bg-[#303632]'}`} />
+                <span className="text-xs font-bold font-display ml-2">{step}/5</span>
+              </div>
+            </section>
 
             {/* Active Workspace / Form Views */}
             <div className="min-h-[60vh]" id="tab-workspace">
